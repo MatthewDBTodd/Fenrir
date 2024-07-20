@@ -8,6 +8,7 @@
 #include <cassert>
 #include <limits>
 #include <random>
+#include <utility>
 
 /*
  * ROOK_MASKS and BISHOP_MASKS are attacks in all that pieces attack directions
@@ -74,7 +75,7 @@ Magic::Magic(const std::uint64_t magic, const std::uint64_t mask, const int shif
     attacks(std::move(attacks))
 {}
 
-std::uint64_t Magic::get_attacks(const std::uint64_t occupied_unmasked) {
+std::uint64_t Magic::get_attacks(const std::uint64_t occupied_unmasked) const {
     const std::uint64_t occupied_masked { occupied_unmasked & mask };
     const std::size_t idx { index_from_blockers(occupied_masked, magic, shift) };
     return attacks[idx];
@@ -139,6 +140,7 @@ std::vector<SquareAttackPermutation> square_attack_permutations(
     std::vector<SquareAttackPermutation> rv;
     rv.reserve(1 << pop_count);
     for (const std::uint64_t blocker_permutation : utility::SubsetIterator(blockers)) {
+        // cppcheck-suppress useStlAlgorithm
         rv.push_back({
             blocker_permutation,
             square_blockers_attacks(square_mask, piece, blocker_permutation)
@@ -159,25 +161,57 @@ Magic Magic::init(const Square square, const Piece piece) {
     std::vector<std::uint64_t> attacks(permutations.size());
     const int shift { 64 - std::popcount(raw_block_mask) };
     std::uint64_t magic {};
-    bool failed { true };
-    while (failed) {
+    while (true) {
         magic = sparse_random();
+        bool failed { false };
         for (const SquareAttackPermutation permutation : permutations) {
             const std::size_t idx { index_from_blockers(permutation.blocker_mask,
                                                         magic, shift) };
             
-            // Unused index, this is good
+            // No collision
             if (attacks[idx] == 0) {
                 attacks[idx] = permutation.attack_mask;
             } else if (attacks[idx] == permutation.attack_mask) {
-                // also good
+                // We don't care about collisions if they map to the same result
                 continue;
             } else {
                 // collision, try again :(
                 std::fill(attacks.begin(), attacks.end(), 0ull);
+                failed = true;
                 break;
             }
         }
+        if (!failed) {
+            break;
+        }
     }
     return Magic(magic, raw_block_mask, shift, attacks);
+}
+
+template <std::size_t... Ns>
+static std::array<Magic, sizeof...(Ns)> make_magic(const Piece piece, 
+                                                   std::index_sequence<Ns...>) {
+    return { (Magic::init(static_cast<Square>(Ns), piece))... };
+}
+
+static std::array<Magic, NUM_SQUARES> init_magics(const Piece piece) {
+    return make_magic(piece, std::make_index_sequence<NUM_SQUARES>());
+}
+
+SlidingPieceAttacks::SlidingPieceAttacks() :
+    rook_attacks(init_magics(ROOK)),
+    bishop_attacks(init_magics(BISHOP))
+{}
+
+std::uint64_t SlidingPieceAttacks::lookup(const Square square, const Piece piece,
+                                          const std::uint64_t blockers) const {
+    assert(piece == BISHOP || piece == ROOK || piece == QUEEN);
+    if (piece == BISHOP) {
+        return bishop_attacks[square].get_attacks(blockers);
+    } else if (piece == ROOK) {
+        return rook_attacks[square].get_attacks(blockers);
+    } else {
+        return bishop_attacks[square].get_attacks(blockers)
+             | rook_attacks[square].get_attacks(blockers);
+    }
 }
