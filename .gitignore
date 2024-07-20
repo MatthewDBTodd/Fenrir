@@ -1,0 +1,9 @@
+*
+
+!CMakeLists.txt
+!include/
+!include/**
+!src/
+!src/**
+!test/
+!test/**
