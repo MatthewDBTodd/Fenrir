@@ -31,6 +31,7 @@ inline std::uint64_t fen_to_hex(std::string_view fen) {
     int shift { 63 };
     auto first { fen.begin() };
     auto last { std::find(first, end, '/') };
+
     const auto fn = [&shift, &result](const std::string_view rank) {
         for (char c : std::views::reverse(rank)) {
             if (std::isdigit(c)) {
