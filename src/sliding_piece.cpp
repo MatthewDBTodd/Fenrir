@@ -1,6 +1,6 @@
 #include "sliding_piece.h"
 #include "direction.h"
-#include "iterator.h"
+#include "subset_iterator.h"
 
 #include <algorithm>
 #include <array>

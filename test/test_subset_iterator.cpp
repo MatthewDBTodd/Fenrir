@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "iterator.h"
+#include "subset_iterator.h"
 
 #include <vector>
 #include <numeric>
@@ -18,7 +18,7 @@ std::vector<std::uint64_t> range_to_vec(const std::uint64_t min, const std::uint
     return rv;
 }
 
-TEST(TestIterator, TestIterator) {
+TEST(TestSubsetIterator, TestSubsetIterator) {
     const std::vector<TestCase> test_cases {
         { 
             341, 
