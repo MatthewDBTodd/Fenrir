@@ -2,6 +2,10 @@
 
 #include <algorithm>
 
+// std::optional<Bitboard> Bitboard::from_fen(std::string_view pieces) {
+// 
+// }
+
 void Bitboard::place_unchecked(const Colour colour, const Piece piece, 
                                const Square square) noexcept {
     const std::uint64_t mask { 1ull << square };
