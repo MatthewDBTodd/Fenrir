@@ -65,18 +65,24 @@ class PawnAttackTable {
 private:
     struct AttackMoves {
         constexpr AttackMoves(const Colour colour) :
-            attacks(gen_attacks(colour)),
-            moves(gen_moves(colour)) {}
-
-        const std::array<std::uint64_t, NUM_SQUARES> attacks;
-        const std::array<std::uint64_t, NUM_SQUARES> moves;
+            table({gen_attacks(colour), gen_moves(colour)}) {}
+        const std::array<std::array<std::uint64_t, NUM_SQUARES>, 2> table;
     };
 
+    std::array<AttackMoves, NUM_COLOURS> colours;
 public:
-    std::array<AttackMoves, NUM_COLOURS> colour;
+    // todo - improve this
+    enum Type {
+        ATTACK,
+        MOVE,
+    };
 
     constexpr PawnAttackTable() :
-        colour{AttackMoves{WHITE}, AttackMoves{BLACK}} {}
+        colours{AttackMoves{WHITE}, AttackMoves{BLACK}} {}
+    
+    std::uint64_t lookup(const Colour colour, const Type type, const Square square)  const {
+        return colours[colour].table[type][square];
+    }
 };
 
 } // namespace piece

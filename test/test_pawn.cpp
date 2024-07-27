@@ -26,9 +26,11 @@ TEST_F(TestPawn, TestPawnMoves) {
 
     for (const auto test_case : test_cases) {
         EXPECT_EQ(test_case.white_mask, 
-                  pawn_attacks.colour[WHITE].moves[test_case.square]);
+                  pawn_attacks.lookup(WHITE, piece::PawnAttackTable::MOVE, 
+                                      test_case.square));
         EXPECT_EQ(test_case.black_mask,
-                  pawn_attacks.colour[BLACK].moves[test_case.square]);
+                  pawn_attacks.lookup(BLACK, piece::PawnAttackTable::MOVE,
+                                      test_case.square));
     }
 }
 
@@ -42,8 +44,10 @@ TEST_F(TestPawn, TestPawnAttacks) {
 
     for (const auto test_case : test_cases) {
         EXPECT_EQ(test_case.white_mask,
-                  pawn_attacks.colour[WHITE].attacks[test_case.square]);
+                  pawn_attacks.lookup(WHITE, piece::PawnAttackTable::ATTACK,
+                                      test_case.square));
         EXPECT_EQ(test_case.black_mask,
-                  pawn_attacks.colour[BLACK].attacks[test_case.square]);
+                  pawn_attacks.lookup(BLACK, piece::PawnAttackTable::ATTACK,
+                                      test_case.square));
     }
 }

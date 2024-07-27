@@ -75,7 +75,7 @@ TEST(TestBitboard, TestBitboardFromFen) {
             { A1, D1, F1, G1, A2, B2, C2, F2, G2, B3, D3, F3, H3, E4,
               B5, C5, D5, E5, G5, H5, A6, C6, D6, F6, C7, F7, G7, H7,
               A8, D8, F8, G8 }),
-        bb.entire_mask());
+        bb.entire_mask()) << "result: " << bb;
     
     EXPECT_EQ(
         mask_from_squares(

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <array>
+#include <bit>
+#include <cassert>
+#include <cstdint>
+
 enum Colour {
     WHITE,
     BLACK,
@@ -30,3 +35,16 @@ enum Square {
 
     NUM_SQUARES,
 };
+
+inline Square from_mask(const std::uint64_t mask) {
+    assert(std::popcount(mask) == 1);
+    return static_cast<Square>(std::countr_zero(mask));
+}
+
+static constexpr std::array<Piece, NUM_PIECES> ALL_PIECES {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+};
+
+inline constexpr Colour opposite(const Colour colour) {
+    return static_cast<Colour>((colour + 1) % NUM_COLOURS);
+}
