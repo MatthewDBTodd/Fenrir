@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "king.h"
-#include "test_utility.h"
+#include "test_helpers.h"
 
 #include <vector>
 

@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <string_view>
 
@@ -41,10 +42,15 @@ public:
         return colours[WHITE] | colours[BLACK];
     }
 
-    bool square_empty(Square square) {
-        return static_cast<bool>(entire_mask() & (1 << square));
+    bool square_empty(const Square square) {
+        return !static_cast<bool>(entire_mask() & (1 << square));
     }
 
+    char square_occupant(const Square square) const;
+
+    friend bool operator==(const Bitboard &a, const Bitboard &b);
+    friend bool operator!=(const Bitboard &a, const Bitboard &b);
+    friend std::ostream& operator<<(std::ostream &os, const Bitboard &bb);
 private:
     std::array<std::uint64_t, NUM_COLOURS> colours {};
     std::array<std::uint64_t, NUM_PIECES> pieces {};

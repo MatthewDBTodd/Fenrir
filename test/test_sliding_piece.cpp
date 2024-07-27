@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "sliding_piece.h"
-#include "test_utility.h"
+#include "test_helpers.h"
 
 #include <memory>
 #include <vector>

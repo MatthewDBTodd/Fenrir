@@ -139,13 +139,13 @@ std::vector<SquareAttackPermutation> square_attack_permutations(
     const int pop_count { std::popcount(blockers) };
     std::vector<SquareAttackPermutation> rv;
     rv.reserve(1 << pop_count);
-    for (const std::uint64_t blocker_permutation : utility::SubsetIterator(blockers)) {
-        // cppcheck-suppress useStlAlgorithm
-        rv.push_back({
-            blocker_permutation,
-            square_blockers_attacks(square_mask, piece, blocker_permutation)
-        });
-    }
+    const auto subset_it = utility::SubsetIterator(blockers);
+    std::transform(subset_it.begin(), subset_it.end(), std::back_inserter(rv),
+      [square_mask, piece] (const std::uint64_t blocker_permutation) {
+        return SquareAttackPermutation {
+            blocker_permutation, 
+            square_blockers_attacks(square_mask, piece, blocker_permutation)};
+    });
     return rv;
 }
 

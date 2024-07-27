@@ -6,8 +6,10 @@
 #include <cctype>
 #include <cstdint>
 #include <exception>
+#include <iostream>
 #include <ranges>
 #include <string_view>
+#include <vector>
 
 struct AttackSquaresTestCase {
     const Square square;
@@ -22,9 +24,6 @@ inline std::uint64_t fen_to_hex(std::string_view fen) {
     const auto end { std::find_if(fen.begin(), fen.end(), [](const char c) {
         return std::isspace(c);
     })};
-    if (end == fen.end()) {
-        throw std::exception();
-    }
     fen = std::string_view(fen.begin(), end);
 
     std::uint64_t result {};
@@ -62,3 +61,16 @@ inline std::uint64_t fen_to_hex(std::string_view fen) {
     return result;
 }
 
+
+inline std::uint64_t mask_from_squares(const std::vector<Square> &occupied_squares) {
+    const bool has_duplicates = std::adjacent_find(
+        occupied_squares.begin(), occupied_squares.end()
+    ) != occupied_squares.end();
+    if (has_duplicates) {
+        std::cerr << "Occupied squares has duplicates. This is probably a mistake\n";
+        throw std::exception();
+    }
+    std::uint64_t rv {};
+    for (const Square sq : occupied_squares) { rv |= (1ull << sq); }
+    return rv;
+}
