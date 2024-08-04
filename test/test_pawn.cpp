@@ -25,12 +25,9 @@ TEST_F(TestPawn, TestPawnMoves) {
     };
 
     for (const auto test_case : test_cases) {
-        EXPECT_EQ(test_case.white_mask, 
-                  pawn_attacks.lookup(WHITE, piece::PawnAttackTable::MOVE, 
-                                      test_case.square));
-        EXPECT_EQ(test_case.black_mask,
-                  pawn_attacks.lookup(BLACK, piece::PawnAttackTable::MOVE,
-                                      test_case.square));
+        EXPECT_EQ(test_case.white_mask, pawn_attacks.moves(WHITE, test_case.square));
+
+        EXPECT_EQ(test_case.black_mask, pawn_attacks.moves(BLACK, test_case.square));
     }
 }
 
@@ -43,11 +40,8 @@ TEST_F(TestPawn, TestPawnAttacks) {
     };
 
     for (const auto test_case : test_cases) {
-        EXPECT_EQ(test_case.white_mask,
-                  pawn_attacks.lookup(WHITE, piece::PawnAttackTable::ATTACK,
-                                      test_case.square));
-        EXPECT_EQ(test_case.black_mask,
-                  pawn_attacks.lookup(BLACK, piece::PawnAttackTable::ATTACK,
-                                      test_case.square));
+        EXPECT_EQ(test_case.white_mask, pawn_attacks.attacks(WHITE, test_case.square));
+
+        EXPECT_EQ(test_case.black_mask, pawn_attacks.attacks(BLACK, test_case.square));
     }
 }

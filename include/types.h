@@ -5,14 +5,14 @@
 #include <cassert>
 #include <cstdint>
 
-enum Colour {
+enum Colour : std::uint8_t {
     WHITE,
     BLACK,
 
     NUM_COLOURS,
 };
 
-enum Piece {
+enum Piece : std::uint8_t {
     PAWN,
     KNIGHT,
     BISHOP,
@@ -23,7 +23,7 @@ enum Piece {
     NUM_PIECES,
 };
 
-enum Square {
+enum Square : std::uint8_t {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -41,8 +41,25 @@ inline Square from_mask(const std::uint64_t mask) {
     return static_cast<Square>(std::countr_zero(mask));
 }
 
+inline std::uint64_t from_square(const Square square) {
+    assert(square != NUM_SQUARES);
+    return (1ul << square);
+}
+
 static constexpr std::array<Piece, NUM_PIECES> ALL_PIECES {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+};
+
+static constexpr std::array<Piece, NUM_PIECES-1> CAPTURABLE_PIECES {
+    QUEEN, ROOK, BISHOP, KNIGHT, PAWN
+};
+
+static constexpr std::array<Piece, 4> PROMOTION_PIECES {
+    QUEEN, ROOK, BISHOP, KNIGHT
+};
+
+static constexpr std::array<Piece, NUM_PIECES-1> NON_PAWN_PIECES {
+    KNIGHT, BISHOP, ROOK, QUEEN, KING
 };
 
 inline constexpr Colour opposite(const Colour colour) {

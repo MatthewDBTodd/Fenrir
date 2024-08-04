@@ -26,3 +26,10 @@ TEST_F(TestMoveGen, TestKingAttackers) {
     bb = *Bitboard::from_fen("7k/8/8/8/8/1K6/8/B7");
     EXPECT_EQ(mask_from_squares({ A1 }), king_attackers(bb, at, BLACK));
 }
+
+TEST_F(TestMoveGen, TestGenPseudoLegalMoves) {
+    Bitboard bb { *Bitboard::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") };
+    std::vector<EncodedMove> moves;
+    MoveGen(moves, bb, at, WHITE, std::nullopt).gen();
+    EXPECT_EQ(20, moves.size());
+}

@@ -139,7 +139,7 @@ std::vector<SquareAttackPermutation> square_attack_permutations(
     const int pop_count { std::popcount(blockers) };
     std::vector<SquareAttackPermutation> rv;
     rv.reserve(1 << pop_count);
-    const auto subset_it = utility::SubsetIterator(blockers);
+    const auto subset_it = utility::Subsets(blockers);
     std::transform(subset_it.begin(), subset_it.end(), std::back_inserter(rv),
       [square_mask, piece] (const std::uint64_t blocker_permutation) {
         return SquareAttackPermutation {

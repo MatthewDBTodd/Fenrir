@@ -18,7 +18,7 @@ std::vector<std::uint64_t> range_to_vec(const std::uint64_t min, const std::uint
     return rv;
 }
 
-TEST(TestSubsetIterator, TestSubsetIterator) {
+TEST(TestSubsets, TestSubsets) {
     const std::vector<TestCase> test_cases {
         { 
             341, 
@@ -31,8 +31,8 @@ TEST(TestSubsetIterator, TestSubsetIterator) {
         { (1ull << 63), { 0, (1ull << 63) } }
     };
     for (const auto &test_case : test_cases) {
-        const std::vector<std::uint64_t> result(SubsetIterator(test_case.val).begin(),
-                                                SubsetIterator(test_case.val).end());
+        const std::vector<std::uint64_t> result(Subsets(test_case.val).begin(),
+                                                Subsets(test_case.val).end());
         EXPECT_EQ(test_case.expected_permutations, result);
     }
 }

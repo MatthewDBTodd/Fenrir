@@ -6,9 +6,9 @@
 namespace utility {
 
 // Iterator to iterate over all subsets of a uint64_t bitmask
-class SubsetIterator {
+class Subsets {
 public:
-    explicit SubsetIterator(const std::uint64_t mask) :
+    explicit Subsets(const std::uint64_t mask) :
         mask(mask)
     {}
 

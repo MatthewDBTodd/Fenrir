@@ -15,15 +15,12 @@ enum PawnMovetype {
 
 class AttackTable {
 public:
-    // for kings and knights
-    std::uint64_t lookup(const Square square, const Piece piece) const;
-    // pawns
-    // todo - pawn move type needs improving 
-    std::uint64_t lookup(const Colour colour, const Square square, 
-                         const PawnMovetype type) const;
-    // sliding pieces
-    std::uint64_t lookup(const Square square, const Piece piece,
-                         const std::uint64_t blockers) const;
+    std::uint64_t captures(const Square square, const Piece piece, const Colour colour,
+                           const std::uint64_t blockers, const std::uint64_t enemies) const;
+
+    std::uint64_t moves(const Square square, const Piece piece, const Colour colour,
+                        const std::uint64_t blockers) const;
+
 private:
     static constexpr piece::PawnAttackTable pawn {};
     static constexpr std::array<std::uint64_t, NUM_SQUARES> knight {

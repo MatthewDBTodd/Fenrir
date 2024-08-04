@@ -38,10 +38,10 @@ target_link_libraries(fenrir fenrir_lib)
 # set(CMAKE_CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--suppress=missingIncludeSystem;")
 # add_executable(fenrir ${SOURCES})
 set_target_properties(fenrir PROPERTIES
-    CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppress=unusedFunction"
+    CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--check-level=exhaustive;--inline-suppr;--suppress=missingIncludeSystem;--suppress=unusedFunction"
 )
 set_target_properties(fenrir_lib PROPERTIES
-    CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppress=unusedFunction"
+    CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--check-level=exhaustive;--inline-suppr;--suppress=missingIncludeSystem;--suppress=unusedFunction"
 )
 
 enable_testing()

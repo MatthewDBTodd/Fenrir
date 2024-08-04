@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <iterator>
 
-class SetBitIterator {
+class SetBits {
 public:
-    explicit SetBitIterator(const std::uint64_t mask) :
+    explicit SetBits(const std::uint64_t mask) :
         mask(mask)
     {}
 

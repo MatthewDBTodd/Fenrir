@@ -9,7 +9,7 @@ struct TestCase {
     const std::vector<std::uint64_t> expected_permutations;
 };
 
-TEST(TestSetBitIterator, TestSetBitIterator) {
+TEST(TestSetBits, TestSetBits) {
     const std::vector<TestCase> test_cases {
         {
             255,
@@ -33,8 +33,8 @@ TEST(TestSetBitIterator, TestSetBitIterator) {
         }
     };
     for (const auto &test_case : test_cases) {
-        const std::vector<std::uint64_t> result(SetBitIterator(test_case.val).begin(),
-                                                SetBitIterator(test_case.val).end());
+        const std::vector<std::uint64_t> result(SetBits(test_case.val).begin(),
+                                                SetBits(test_case.val).end());
         EXPECT_EQ(test_case.expected_permutations, result);
     }
 }
