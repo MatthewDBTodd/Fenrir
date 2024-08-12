@@ -74,3 +74,39 @@ inline std::uint64_t mask_from_squares(const std::vector<Square> &occupied_squar
     for (const Square sq : occupied_squares) { rv |= (1ull << sq); }
     return rv;
 }
+
+class MaskDisplay {
+public:
+    explicit MaskDisplay(const std::uint64_t mask) : mask_(mask) {}
+    inline friend std::ostream& operator<<(std::ostream &os, const MaskDisplay mask);
+private:
+    const std::uint64_t mask_;
+};
+
+inline std::ostream& operator<<(std::ostream &os, const MaskDisplay mask) {
+    os << std::endl;
+    std::size_t rank_idx { 64 };
+    for (const int rank : std::views::iota(1, 9) | std::views::reverse) {
+        rank_idx -= 8;
+        os << "   ";
+        for (const int _ : std::views::iota(0, 8)) {
+            os << "+---";
+        }
+        os << std::endl;
+        os << " " << rank << " ";
+        for (const int file : std::views::iota(0, 8)) {
+            os << "| " << (mask.mask_ & (1ul << (rank_idx + file)) ? "X" : " ")
+               << " ";
+        }
+        os << "|" << std::endl;
+    }
+    os << "   ";
+    for (const int _ : std::views::iota(0, 8)) {
+        os << "+---";
+    }
+    os << std::endl;
+    os << "     a   b   c   d   e   f   g   h" << std::endl;;
+    os << std::endl;
+
+    return os;
+}

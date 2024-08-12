@@ -32,6 +32,8 @@ public:
     // Made rvalue to prevent mistakes with the object outliving its reference members
     void gen() &&;
 private:
+    void push_if_legal(const std::uint64_t source, const std::uint64_t dest, const MoveType type);
+
     void generate_pseudo_pawn_moves();
     void single_pawn_moves(const std::uint64_t single_pawn);
     void single_pawn_captures(const std::uint64_t single_pawn, const std::uint64_t captures, 
@@ -46,9 +48,19 @@ private:
     const AttackTable &at;
     const Colour friendly_colour;
     std::optional<Square> en_passant;
+
+    const std::uint64_t pinned {};
 };
 
 std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour);
+// for a given piece, returns whether it's pinned or not. If it is pinned, it returns 
+// a mask of pieces the piece is legally able to move to, if it's not pinned, an empty mask
+// std::uint64_t pinned(const std::uint64_t piece_pos, const Bitboard &bb, const AttackTable &at,
+//                      const Colour friendly_colour);
+
+// returns a mask of all pinned pieces
+std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
 
 /*
 struct EncodedMove {

@@ -1,3 +1,4 @@
+#include "masks.h"
 #include "move_gen.h"
 #include "set_bit_iterator.h"
 
@@ -45,7 +46,8 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const Atta
         bb(bb),
         at(at),
         friendly_colour(friendly_colour),
-        en_passant(en_passant)
+        en_passant(en_passant),
+        pinned(pinned_pieces(bb, at, friendly_colour))
 {}
 
 void MoveGen::gen() && {
@@ -61,6 +63,24 @@ void MoveGen::gen() && {
     }
 }
 
+static bool in_line_with_king(const std::uint64_t source, const std::uint64_t dest,
+                              const std::uint64_t king_pos) {
+    return direction::SOURCE_DEST_MASKS[from_mask(king_pos)][from_mask(source)] & dest;
+}
+
+// TODO - handle en-passant legal check
+void MoveGen::push_if_legal(
+    const std::uint64_t source, const std::uint64_t dest, const MoveType type
+) {
+    if (!(source & pinned) || 
+        in_line_with_king(source, dest, bb.colour_piece_mask(friendly_colour, KING))
+    ) {
+        moves.emplace_back(static_cast<std::uint16_t>(from_mask(source)),
+                           static_cast<std::uint16_t>(from_mask(dest)),
+                           static_cast<std::uint16_t>(type));
+    }
+}
+
 void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {
     const std::uint64_t all_pieces { bb.entire_mask() };
     const std::uint64_t all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
@@ -68,13 +88,9 @@ void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {
         const std::uint64_t quiet_moves { 
             at.moves(from_mask(single_src_piece), piece_type, friendly_colour, all_pieces)
         };
-        std::transform(SetBits(quiet_moves).begin(), SetBits(quiet_moves).end(),
-                       std::back_inserter(moves), [=](const auto single_move) {
-            return EncodedMove {
-                static_cast<std::uint16_t>(from_mask(single_src_piece)),
-                static_cast<std::uint16_t>(from_mask(single_move)),
-                static_cast<std::uint16_t>(MoveType::QUIET) };
-        });
+        for (const auto single_move : SetBits(quiet_moves)) {
+            push_if_legal(single_src_piece, single_move, MoveType::QUIET);
+        }
     }
 }
 
@@ -105,13 +121,9 @@ void MoveGen::captures_for_single_piece(
         const std::uint64_t captures_of_piece {
             captures & bb.colour_piece_mask(enemy_colour, capturable_piece)
         };
-        std::transform(SetBits(captures_of_piece).begin(), SetBits(captures_of_piece).end(),
-                       std::back_inserter(moves), [=](const auto single_capture) {
-            return EncodedMove {
-                static_cast<std::uint16_t>(from_mask(single_src_piece)),
-                static_cast<std::uint16_t>(from_mask(single_capture)),
-                static_cast<std::uint16_t>(MoveType::CAPTURE) };
-        });
+        for (const auto single_capture : SetBits(captures_of_piece)) {
+            push_if_legal(single_src_piece, single_capture, MoveType::CAPTURE);
+        }
     }
 }
 
@@ -126,32 +138,17 @@ void MoveGen::single_pawn_quiet_moves(
         // least significant bit is single push for white, double for black
         const MoveType first_type = friendly_colour == WHITE ? MoveType::QUIET 
                                                              : MoveType::DOUBLE_PAWN_PUSH;
-        moves.emplace_back(
-            static_cast<std::uint16_t>(from_mask(single_pawn)),
-            static_cast<std::uint16_t>(from_mask(first)),
-            static_cast<std::uint16_t>(first_type)
-        );
+        push_if_legal(single_pawn, first, first_type);
+
         const MoveType second_type = friendly_colour == WHITE ? MoveType::DOUBLE_PAWN_PUSH
                                                                 : MoveType::QUIET;
-        moves.emplace_back(
-            static_cast<std::uint16_t>(from_mask(single_pawn)),
-            static_cast<std::uint16_t>(from_mask(quiet_moves)),
-            static_cast<std::uint16_t>(second_type)
-        );
+        push_if_legal(single_pawn, quiet_moves, second_type);
     } else if (is_promotion(quiet_moves)) {
-        std::transform(PROMOTION_PIECES.begin(), PROMOTION_PIECES.end(), 
-                       std::back_inserter(moves), [=](const auto promotion_piece) {
-            return EncodedMove {
-                static_cast<std::uint16_t>(from_mask(single_pawn)),
-                static_cast<std::uint16_t>(from_mask(quiet_moves)),
-                static_cast<std::uint16_t>(promotion(promotion_piece)) };
-        });
+        for (const auto promotion_piece : PROMOTION_PIECES) {
+            push_if_legal(single_pawn, quiet_moves, promotion(promotion_piece));
+        }
     } else {
-        moves.emplace_back(
-            static_cast<std::uint16_t>(from_mask(single_pawn)),
-            static_cast<std::uint16_t>(from_mask(quiet_moves)),
-            static_cast<std::uint16_t>(MoveType::QUIET)
-        );
+        push_if_legal(single_pawn, quiet_moves, MoveType::QUIET);
     }
 }
 
@@ -162,19 +159,11 @@ void MoveGen::single_pawn_captures(const std::uint64_t single_pawn, const std::u
     ) };
     for (const auto single_capture : SetBits(captures_of_piece)) {
         if (is_promotion(captures)) {
-            std::transform(PROMOTION_PIECES.begin(), PROMOTION_PIECES.end(),
-                           std::back_inserter(moves), [=](const auto promotion_piece) {
-                return EncodedMove {
-                    static_cast<std::uint16_t>(from_mask(single_pawn)),
-                    static_cast<std::uint16_t>(from_mask(single_capture)),
-                    static_cast<std::uint16_t>(capture_promotion(promotion_piece)) };
-            });
+            for (const auto promotion_piece : PROMOTION_PIECES) {
+                push_if_legal(single_pawn, single_capture, capture_promotion(promotion_piece));
+            }
         } else {
-            moves.emplace_back(
-                static_cast<std::uint16_t>(from_mask(single_pawn)),
-                static_cast<std::uint16_t>(from_mask(single_capture)),
-                static_cast<std::uint16_t>(MoveType::CAPTURE)
-            );
+            push_if_legal(single_pawn, single_capture, MoveType::CAPTURE);
         } 
     }
 }
@@ -196,11 +185,7 @@ void MoveGen::single_pawn_moves(const std::uint64_t single_pawn) {
     const std::uint64_t ep_captures { ep_mask & captures };
     if (ep_captures > 0) {
         assert(std::popcount(ep_captures) == 1);
-        moves.emplace_back(
-            static_cast<std::uint16_t>(from_mask(single_pawn)),
-            static_cast<std::uint16_t>(*en_passant),
-            static_cast<std::uint16_t>(MoveType::EN_PASSANT)
-        );
+        push_if_legal(single_pawn, *en_passant, MoveType::EN_PASSANT);
     }
 
     const std::uint64_t all_pieces { bb.entire_mask() };
@@ -234,6 +219,65 @@ std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Co
     return king_attackers;
 }
 
+std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour) {
+    const std::uint64_t king_pos { bb.colour_piece_mask(colour, KING) };
+    const Square king_sq { from_mask(king_pos) };
+    const std::uint64_t enemy_queens { bb.colour_piece_mask(opposite(colour), QUEEN) };
+    // pretend the queen is a rook/bishop for the sake of pin calculations
+    const std::uint64_t enemy_rooks { 
+        bb.colour_piece_mask(opposite(colour), ROOK) | enemy_queens
+    };
+    const std::uint64_t enemy_bishops { 
+        bb.colour_piece_mask(opposite(colour), BISHOP) | enemy_queens
+    };
+
+    // place a rook/bishop in the friendly king position and see which friendly pieces it would
+    // attack, which gives us candidates for pinned pieces
+    const std::uint64_t rook_pin_candidates {
+        at.captures(king_sq, ROOK, opposite(colour), bb.entire_mask(), bb.colour_mask(colour))
+    };
+    const std::uint64_t bishop_pin_candidates {
+        at.captures(king_sq, BISHOP, opposite(colour), bb.entire_mask(), bb.colour_mask(colour))
+    };
+
+    std::uint64_t rv {};
+
+    for (const auto rook_pin_candidate : SetBits(rook_pin_candidates)) {
+        // get rooks in line with candidate if any
+        const std::uint64_t rooks_in_line { 
+            direction::SOURCE_DEST_MASKS[king_sq][from_mask(rook_pin_candidate)] & enemy_rooks 
+        };
+        for (const auto rook_in_line : SetBits(rooks_in_line)) {
+            // cppcheck-suppress useStlAlgorithm
+            rv |= (
+                at.captures(from_mask(rook_in_line), 
+                            ROOK, 
+                            opposite(colour), 
+                            bb.entire_mask(), 
+                            bb.colour_mask(colour)) & rook_pin_candidate
+            );
+        };
+    }
+
+    for (const auto bishop_pin_candidate : SetBits(bishop_pin_candidates)) {
+        // get bishops in line with candidate if any
+        const std::uint64_t bishops_in_line { 
+            direction::SOURCE_DEST_MASKS[king_sq][from_mask(bishop_pin_candidate)] & enemy_bishops 
+        };
+        for (const auto bishop_in_line : SetBits(bishops_in_line)) {
+            // cppcheck-suppress useStlAlgorithm
+            rv |= (
+                at.captures(from_mask(bishop_in_line), 
+                            BISHOP, 
+                            opposite(colour), 
+                            bb.entire_mask(), 
+                            bb.colour_mask(colour)) & bishop_pin_candidate
+            );
+        };
+    }
+
+    return rv;
+}
 /*
 DecodedMove decode(const EncodedMove encoded_move) {
     move_type_v::Common common {
