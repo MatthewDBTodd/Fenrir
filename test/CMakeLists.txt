@@ -4,7 +4,7 @@ include(GoogleTest)
 
 add_executable(test_fenrir ${TEST_SOURCES})
 target_link_libraries(test_fenrir GTest::gtest_main fenrir_lib)
-gtest_discover_tests(test_fenrir)
+gtest_discover_tests(test_fenrir DISCOVERY_TIMEOUT 600)
 
 add_custom_target(
     run_tests

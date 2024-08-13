@@ -72,7 +72,7 @@ void Bitboard::remove_unchecked(const Colour colour,
 
 void Bitboard::clear_unchecked(const Square square) noexcept {
     const std::uint64_t mask { 1ull << square };
-    const auto mask_xor = [mask](const std::uint64_t n) { return n ^ mask; };
+    const auto mask_xor = [=](const std::uint64_t n) { return n ^ mask; };
     std::transform(colours.begin(), colours.end(), colours.begin(), mask_xor);
     std::transform(pieces.begin(), pieces.end(), pieces.begin(), mask_xor);
 }
@@ -85,7 +85,7 @@ char Bitboard::square_occupant(const Square square) const {
     // If this ends up being suboptimal I can optimise by storing an array of indexes
     // to the piece/colours array 
     const auto res { std::find_if(pieces.begin(), pieces.end(), 
-        [this, mask](const std::uint64_t n) {
+        [=](const std::uint64_t n) {
         return (mask & n) > 0;
     })};
     const Piece piece { static_cast<Piece>(std::distance(pieces.begin(), res)) };
@@ -106,6 +106,166 @@ char Bitboard::square_occupant(const Square square) const {
     } else {
         return piece_char;
     }
+}
+
+void Bitboard::operator()(const move_type_v::Quiet quiet, move_action_v::Make) {
+    remove_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.source);
+    place_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.dest);
+}
+
+void Bitboard::operator()(const move_type_v::Quiet quiet, move_action_v::UnMake) {
+    remove_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.dest);
+    place_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.source);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::Capture cap, move_action_v::Make) {
+    remove_unchecked(cap.common.colour, cap.common.piece, cap.common.source);
+    remove_unchecked(opposite(cap.common.colour), cap.captured_piece, cap.common.dest);
+    place_unchecked(cap.common.colour, cap.common.piece, cap.common.dest);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::Capture cap, move_action_v::UnMake) {
+    remove_unchecked(cap.common.colour, cap.common.piece, cap.common.dest);
+    place_unchecked(cap.common.colour, cap.common.piece, cap.common.source);
+    place_unchecked(opposite(cap.common.colour), cap.captured_piece, cap.common.dest);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::DoublePawnPush dpp, move_action_v::Make) {
+    remove_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.source);
+    place_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.dest);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::DoublePawnPush dpp, move_action_v::UnMake) {
+    remove_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.dest);
+    place_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.source);
+}
+
+void Bitboard::operator()(const move_type_v::CastleKingSide cks, move_action_v::Make) {
+    remove_unchecked(cks.common.colour, cks.common.piece, cks.common.source);
+    place_unchecked(cks.common.colour, cks.common.piece, cks.common.dest);
+    const Square rook_source = [=] {
+        if (cks.common.colour == WHITE) {
+            return H1;
+        } else {
+            return H8;
+        }
+    }();
+    const Square rook_dest = [=] {
+        if (cks.common.colour == WHITE) {
+            return F1;
+        } else {
+            return F8;
+        }
+    }();
+    remove_unchecked(cks.common.colour, ROOK, rook_source);
+    place_unchecked(cks.common.colour, ROOK, rook_dest);
+}
+
+void Bitboard::operator()(const move_type_v::CastleKingSide cks, move_action_v::UnMake) {
+    remove_unchecked(cks.common.colour, cks.common.piece, cks.common.dest);
+    place_unchecked(cks.common.colour, cks.common.piece, cks.common.source);
+    const Square rook_source = [=] {
+        if (cks.common.colour == WHITE) {
+            return H1;
+        } else {
+            return H8;
+        }
+    }();
+    const Square rook_dest = [=] {
+        if (cks.common.colour == WHITE) {
+            return F1;
+        } else {
+            return F8;
+        }
+    }();
+    remove_unchecked(cks.common.colour, ROOK, rook_dest);
+    place_unchecked(cks.common.colour, ROOK, rook_source);
+}
+
+void Bitboard::operator()(const move_type_v::CastleQueenSide cqs, move_action_v::Make) {
+    remove_unchecked(cqs.common.colour, cqs.common.piece, cqs.common.source);
+    place_unchecked(cqs.common.colour, cqs.common.piece, cqs.common.dest);
+    const Square rook_source = [=] {
+        if (cqs.common.colour == WHITE) {
+            return A1;
+        } else {
+            return A8;
+        }
+    }();
+    const Square rook_dest = [=] {
+        if (cqs.common.colour == WHITE) {
+            return D1;
+        } else {
+            return D8;
+        }
+    }();
+    remove_unchecked(cqs.common.colour, ROOK, rook_source);
+    place_unchecked(cqs.common.colour, ROOK, rook_dest);
+}
+
+void Bitboard::operator()(const move_type_v::CastleQueenSide cqs, move_action_v::UnMake) {
+    remove_unchecked(cqs.common.colour, cqs.common.piece, cqs.common.dest);
+    place_unchecked(cqs.common.colour, cqs.common.piece, cqs.common.source);
+    const Square rook_source = [=] {
+        if (cqs.common.colour == WHITE) {
+            return A1;
+        } else {
+            return A8;
+        }
+    }();
+    const Square rook_dest = [=] {
+        if (cqs.common.colour == WHITE) {
+            return D1;
+        } else {
+            return D8;
+        }
+    }();
+    remove_unchecked(cqs.common.colour, ROOK, rook_dest);
+    place_unchecked(cqs.common.colour, ROOK, rook_source);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::EnPassant ep, move_action_v::Make) {
+    remove_unchecked(ep.common.colour, ep.common.piece, ep.common.source);
+    place_unchecked(ep.common.colour, ep.common.piece, ep.common.dest);
+    remove_unchecked(opposite(ep.common.colour), PAWN, ep.pawn_square);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::EnPassant ep, move_action_v::UnMake) {
+    remove_unchecked(ep.common.colour, ep.common.piece, ep.common.dest);
+    place_unchecked(ep.common.colour, ep.common.piece, ep.common.source);
+    place_unchecked(opposite(ep.common.colour), PAWN, ep.pawn_square);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::MovePromotion mp, move_action_v::Make) {
+    remove_unchecked(mp.common.colour, mp.common.piece, mp.common.source);
+    place_unchecked(mp.common.colour, mp.promotion_piece, mp.common.dest);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::MovePromotion mp, move_action_v::UnMake) {
+    remove_unchecked(mp.common.colour, mp.promotion_piece, mp.common.dest);
+    place_unchecked(mp.common.colour, mp.common.piece, mp.common.source);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::CapturePromotion cp, move_action_v::Make) {
+    remove_unchecked(cp.common.colour, cp.common.piece, cp.common.source);
+    remove_unchecked(opposite(cp.common.colour), cp.captured_piece, cp.common.dest);
+    place_unchecked(cp.common.colour, cp.promotion_piece, cp.common.dest);
+}
+
+// cppcheck-suppress passedByValue
+void Bitboard::operator()(const move_type_v::CapturePromotion cp, move_action_v::UnMake) {
+    remove_unchecked(cp.common.colour, cp.promotion_piece, cp.common.dest);
+    place_unchecked(cp.common.colour, cp.common.piece, cp.common.source);
+    place_unchecked(opposite(cp.common.colour), cp.captured_piece, cp.common.dest);
 }
 
 bool operator==(const Bitboard &a, const Bitboard &b) {

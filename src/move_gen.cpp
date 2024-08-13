@@ -1,40 +1,42 @@
+#include "bitboard.h"
 #include "masks.h"
 #include "move_gen.h"
 #include "set_bit_iterator.h"
 
 #include <algorithm>
 #include <bit>
+#include <cassert>
 #include <exception>
 #include <utility>
 
-static MoveType promotion(const Piece promotion_piece) {
-    assert(PAWN < promotion_piece && promotion_piece < KING);
-    switch(promotion_piece) {
-        case KNIGHT : return MoveType::KNIGHT_PROM;
-        case BISHOP : return MoveType::BISHOP_PROM;
-        case ROOK   : return MoveType::ROOK_PROM;
-        case QUEEN  : return MoveType::QUEEN_PROM;
-        default     : return MoveType::NUM_MOVE_TYPES; // should not happen
-    }
-}
-
-static MoveType capture_promotion(const Piece promotion_piece) {
-    assert(PAWN < promotion_piece && promotion_piece < KING);
-    switch(promotion_piece) {
-        case KNIGHT : return MoveType::KNIGHT_CAP_PROM;
-        case BISHOP : return MoveType::BISHOP_CAP_PROM;
-        case ROOK   : return MoveType::ROOK_CAP_PROM;
-        case QUEEN  : return MoveType::QUEEN_CAP_PROM;
-        default     : return MoveType::NUM_MOVE_TYPES; // should not happen
-    }
-}
+// static MoveType promotion(const Piece promotion_piece) {
+//     assert(PAWN < promotion_piece && promotion_piece < KING);
+//     switch(promotion_piece) {
+//         case KNIGHT : return MoveType::KNIGHT_PROM;
+//         case BISHOP : return MoveType::BISHOP_PROM;
+//         case ROOK   : return MoveType::ROOK_PROM;
+//         case QUEEN  : return MoveType::QUEEN_PROM;
+//         default     : return MoveType::NUM_MOVE_TYPES; // should not happen
+//     }
+// }
+// 
+// static MoveType capture_promotion(const Piece promotion_piece) {
+//     assert(PAWN < promotion_piece && promotion_piece < KING);
+//     switch(promotion_piece) {
+//         case KNIGHT : return MoveType::KNIGHT_CAP_PROM;
+//         case BISHOP : return MoveType::BISHOP_CAP_PROM;
+//         case ROOK   : return MoveType::ROOK_CAP_PROM;
+//         case QUEEN  : return MoveType::QUEEN_CAP_PROM;
+//         default     : return MoveType::NUM_MOVE_TYPES; // should not happen
+//     }
+// }
 
 static bool is_promotion(const std::uint64_t targets) {
     static constexpr std::uint64_t PROMOTION_RANKS {
-        (1ull << A1) | (1ull << B1) | (1ull << C1) | (1ull << D1) |
-        (1ull << E1) | (1ull << F1) | (1ull << G1) | (1ull << H1) |
-        (1ull << A8) | (1ull << B8) | (1ull << C8) | (1ull << D8) |
-        (1ull << E8) | (1ull << F8) | (1ull << G8) | (1ull << H8)
+        (1ul << A1) | (1ul << B1) | (1ul << C1) | (1ul << D1) |
+        (1ul << E1) | (1ul << F1) | (1ul << G1) | (1ul << H1) |
+        (1ul << A8) | (1ul << B8) | (1ul << C8) | (1ul << D8) |
+        (1ul << E8) | (1ul << F8) | (1ul << G8) | (1ul << H8)
     };
 
     return (targets & PROMOTION_RANKS) > 0;
@@ -50,6 +52,7 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const Atta
         pinned(pinned_pieces(bb, at, friendly_colour))
 {}
 
+// TODO - castling
 void MoveGen::gen() && {
     generate_pseudo_pawn_moves();
 
@@ -69,15 +72,20 @@ static bool in_line_with_king(const std::uint64_t source, const std::uint64_t de
 }
 
 // TODO - handle en-passant legal check
+// TODO - check king move legal check
 void MoveGen::push_if_legal(
-    const std::uint64_t source, const std::uint64_t dest, const MoveType type
+    const MoveType type, const std::uint64_t source, const std::uint64_t dest,
+    const Piece piece, const Piece captured_piece, const Piece promoted_piece
 ) {
     if (!(source & pinned) || 
         in_line_with_king(source, dest, bb.colour_piece_mask(friendly_colour, KING))
     ) {
-        moves.emplace_back(static_cast<std::uint16_t>(from_mask(source)),
-                           static_cast<std::uint16_t>(from_mask(dest)),
-                           static_cast<std::uint16_t>(type));
+        moves.emplace_back(static_cast<std::uint32_t>(type),
+                           static_cast<std::uint32_t>(from_mask(source)),
+                           static_cast<std::uint32_t>(from_mask(dest)),
+                           static_cast<std::uint32_t>(piece),
+                           static_cast<std::uint32_t>(captured_piece),
+                           static_cast<std::uint32_t>(promoted_piece));
     }
 }
 
@@ -89,7 +97,8 @@ void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {
             at.moves(from_mask(single_src_piece), piece_type, friendly_colour, all_pieces)
         };
         for (const auto single_move : SetBits(quiet_moves)) {
-            push_if_legal(single_src_piece, single_move, MoveType::QUIET);
+            push_if_legal(MoveType::QUIET, single_src_piece, single_move, piece_type,
+                          NUM_PIECES, NUM_PIECES);
         }
     }
 }
@@ -122,7 +131,8 @@ void MoveGen::captures_for_single_piece(
             captures & bb.colour_piece_mask(enemy_colour, capturable_piece)
         };
         for (const auto single_capture : SetBits(captures_of_piece)) {
-            push_if_legal(single_src_piece, single_capture, MoveType::CAPTURE);
+            push_if_legal(MoveType::CAPTURE, single_src_piece, single_capture,
+                          piece_type, capturable_piece, NUM_PIECES);
         }
     }
 }
@@ -138,17 +148,18 @@ void MoveGen::single_pawn_quiet_moves(
         // least significant bit is single push for white, double for black
         const MoveType first_type = friendly_colour == WHITE ? MoveType::QUIET 
                                                              : MoveType::DOUBLE_PAWN_PUSH;
-        push_if_legal(single_pawn, first, first_type);
+        push_if_legal(first_type, single_pawn, first, PAWN, NUM_PIECES, NUM_PIECES);
 
         const MoveType second_type = friendly_colour == WHITE ? MoveType::DOUBLE_PAWN_PUSH
                                                                 : MoveType::QUIET;
-        push_if_legal(single_pawn, quiet_moves, second_type);
+        push_if_legal(second_type, single_pawn, quiet_moves, PAWN, NUM_PIECES, NUM_PIECES);
     } else if (is_promotion(quiet_moves)) {
         for (const auto promotion_piece : PROMOTION_PIECES) {
-            push_if_legal(single_pawn, quiet_moves, promotion(promotion_piece));
+            push_if_legal(MoveType::MOVE_PROMOTION, single_pawn, quiet_moves, PAWN,
+                          NUM_PIECES, promotion_piece);
         }
     } else {
-        push_if_legal(single_pawn, quiet_moves, MoveType::QUIET);
+        push_if_legal(MoveType::QUIET, single_pawn, quiet_moves, PAWN, NUM_PIECES, NUM_PIECES);
     }
 }
 
@@ -160,10 +171,12 @@ void MoveGen::single_pawn_captures(const std::uint64_t single_pawn, const std::u
     for (const auto single_capture : SetBits(captures_of_piece)) {
         if (is_promotion(captures)) {
             for (const auto promotion_piece : PROMOTION_PIECES) {
-                push_if_legal(single_pawn, single_capture, capture_promotion(promotion_piece));
+                push_if_legal(MoveType::CAPTURE_PROMOTION, single_pawn, single_capture,
+                              PAWN, capturable, promotion_piece);
             }
         } else {
-            push_if_legal(single_pawn, single_capture, MoveType::CAPTURE);
+            push_if_legal(MoveType::CAPTURE, single_pawn, single_capture, PAWN,
+                          capturable, NUM_PIECES);
         } 
     }
 }
@@ -185,7 +198,7 @@ void MoveGen::single_pawn_moves(const std::uint64_t single_pawn) {
     const std::uint64_t ep_captures { ep_mask & captures };
     if (ep_captures > 0) {
         assert(std::popcount(ep_captures) == 1);
-        push_if_legal(single_pawn, *en_passant, MoveType::EN_PASSANT);
+        push_if_legal(MoveType::EN_PASSANT, single_pawn, ep_mask, PAWN, PAWN, NUM_PIECES);
     }
 
     const std::uint64_t all_pieces { bb.entire_mask() };
@@ -278,35 +291,89 @@ std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Col
 
     return rv;
 }
-/*
+
+static Square ep_square(const Square dest_square) {
+    static constexpr std::uint64_t white_double_push_squares {
+        (1ul << A4) | (1ul << B4) | (1ul << C4) | (1ul << D4) |
+        (1ul << E4) | (1ul << F4) | (1ul << G4) | (1ul << H4)
+    };
+
+    static constexpr std::uint64_t black_double_push_squares {
+        (1ul << A5) | (1ul << B5) | (1ul << C5) | (1ul << D5) |
+        (1ul << E5) | (1ul << F5) | (1ul << G5) | (1ul << H5)
+    };
+    const std::uint64_t square_mask { from_square(dest_square) };
+
+    assert((square_mask & white_double_push_squares) || 
+           (square_mask & black_double_push_squares));
+    
+    (void)black_double_push_squares;
+
+    if (square_mask & white_double_push_squares) {
+        return from_mask(direction::south(square_mask));
+    } else {
+        return from_mask(direction::north(square_mask));
+    }
+}
+
+static Square ep_pawn_square(const Square dest_square) {
+    static constexpr std::uint64_t white_double_push_squares {
+        (1ul << A4) | (1ul << B4) | (1ul << C4) | (1ul << D4) |
+        (1ul << E4) | (1ul << F4) | (1ul << G4) | (1ul << H4)
+    };
+
+    static constexpr std::uint64_t black_double_push_squares {
+        (1ul << A5) | (1ul << B5) | (1ul << C5) | (1ul << D5) |
+        (1ul << E5) | (1ul << F5) | (1ul << G5) | (1ul << H5)
+    };
+    const std::uint64_t square_mask { from_square(dest_square) };
+
+    assert((square_mask & white_double_push_squares) || 
+           (square_mask & black_double_push_squares));
+    
+    (void)black_double_push_squares;
+
+    if (square_mask & white_double_push_squares) {
+        return from_mask(direction::north(square_mask));
+    } else {
+        return from_mask(direction::south(square_mask));
+    }
+}
+
 DecodedMove decode(const EncodedMove encoded_move) {
     move_type_v::Common common {
         static_cast<Square>(encoded_move.source_square),
         static_cast<Square>(encoded_move.dest_square),
-        static_cast<Piece>(encoded_move.piece)
+        static_cast<Piece>(encoded_move.piece),
+        static_cast<Colour>(encoded_move.colour)
     };
     MoveType move_type { static_cast<MoveType>(encoded_move.move_type) };
     switch (move_type) {
-        case MoveType::QUIET : return move_type_v::Quiet { common };
+        case MoveType::QUIET : 
+            return move_type_v::Quiet { common };
         case MoveType::CAPTURE : {
-            assert(encoded_move.piece1 < NUM_PIECES);
-            const Piece captured { static_cast<Piece>(encoded_move.piece1) }; 
+            assert(encoded_move.captured_piece < NUM_PIECES);
+            const Piece captured { static_cast<Piece>(encoded_move.captured_piece) }; 
             return move_type_v::Capture { common, captured };}
-        case MoveType::DOUBLE_PAWN_PUSH : return move_type_v::DoublePawnPush { common };
-        case MoveType::CASTLE_KINGSIDE : return move_type_v::CastleKingSide { common };
-        case MoveType::CASTLE_QUEENSIDE : return move_type_v::CastleQueenSide { common };
-        case MoveType::EN_PASSANT : return move_type_v::EnPassant { common };
+        case MoveType::DOUBLE_PAWN_PUSH : 
+            return move_type_v::DoublePawnPush { common, ep_square(common.dest) };
+        case MoveType::CASTLE_KINGSIDE : 
+            return move_type_v::CastleKingSide { common };
+        case MoveType::CASTLE_QUEENSIDE : 
+            return move_type_v::CastleQueenSide { common };
+        case MoveType::EN_PASSANT : 
+            return move_type_v::EnPassant { common, ep_pawn_square(common.dest) };
         case MoveType::MOVE_PROMOTION : {
-            assert(encoded_move.piece1 < NUM_PIECES);
-            const Piece promoted { static_cast<Piece>(encoded_move.piece1) };
+            assert(encoded_move.promoted_piece < NUM_PIECES);
+            const Piece promoted { static_cast<Piece>(encoded_move.promoted_piece) };
             return move_type_v::MovePromotion { common, promoted };}
         case MoveType::CAPTURE_PROMOTION : {
-            assert(encoded_move.piece1 < NUM_PIECES);
-            assert(encoded_move.piece2 < NUM_PIECES);
-            const Piece promoted { static_cast<Piece>(encoded_move.piece1) };
-            const Piece captured { static_cast<Piece>(encoded_move.piece2) };
-            return move_type_v::CapturePromotion { common, promoted, captured };}
-        default: throw std::invalid_argument("Unrecognised move type"); // should never happen
+            assert(encoded_move.captured_piece < NUM_PIECES);
+            assert(encoded_move.promoted_piece < NUM_PIECES);
+            const Piece promoted { static_cast<Piece>(encoded_move.promoted_piece) };
+            const Piece captured { static_cast<Piece>(encoded_move.captured_piece) };
+            return move_type_v::CapturePromotion { common, captured, promoted };}
+        default : 
+            throw std::invalid_argument("Unrecognised move type"); // should never happen
     }
 }
-*/

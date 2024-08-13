@@ -1,5 +1,6 @@
 #pragma once
 
+#include "move_gen.h"
 #include "types.h"
 
 #include <array>
@@ -47,6 +48,23 @@ public:
     }
 
     char square_occupant(const Square square) const;
+
+    void operator()(const move_type_v::Quiet, move_action_v::Make);
+    void operator()(const move_type_v::Quiet, move_action_v::UnMake);
+    void operator()(const move_type_v::Capture, move_action_v::Make);
+    void operator()(const move_type_v::Capture, move_action_v::UnMake);
+    void operator()(const move_type_v::DoublePawnPush, move_action_v::Make);
+    void operator()(const move_type_v::DoublePawnPush, move_action_v::UnMake);
+    void operator()(const move_type_v::CastleKingSide, move_action_v::Make);
+    void operator()(const move_type_v::CastleKingSide, move_action_v::UnMake);
+    void operator()(const move_type_v::CastleQueenSide, move_action_v::Make);
+    void operator()(const move_type_v::CastleQueenSide, move_action_v::UnMake);
+    void operator()(const move_type_v::EnPassant, move_action_v::Make);
+    void operator()(const move_type_v::EnPassant, move_action_v::UnMake);
+    void operator()(const move_type_v::MovePromotion, move_action_v::Make);
+    void operator()(const move_type_v::MovePromotion, move_action_v::UnMake);
+    void operator()(const move_type_v::CapturePromotion, move_action_v::Make);
+    void operator()(const move_type_v::CapturePromotion, move_action_v::UnMake);
 
     friend bool operator==(const Bitboard &a, const Bitboard &b);
     friend bool operator!=(const Bitboard &a, const Bitboard &b);
