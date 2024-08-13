@@ -61,9 +61,13 @@ private:
     std::optional<Square> en_passant;
 
     const std::uint64_t pinned {};
+    const std::uint64_t danger_squares {};
+    const std::uint64_t checking_pieces {};
 };
 
 std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
+std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
 // for a given piece, returns whether it's pinned or not. If it is pinned, it returns 
 // a mask of pieces the piece is legally able to move to, if it's not pinned, an empty mask
 // std::uint64_t pinned(const std::uint64_t piece_pos, const Bitboard &bb, const AttackTable &at,

@@ -15,11 +15,18 @@ enum PawnMovetype {
 
 class AttackTable {
 public:
+    // all the squares a piece threatens/covers
+    std::uint64_t attacks(const Square square, const Piece piece, const Colour colour,
+                          const std::uint64_t blockers) const;
+
+    // attacks & enemies
     std::uint64_t captures(const Square square, const Piece piece, const Colour colour,
                            const std::uint64_t blockers, const std::uint64_t enemies) const;
 
+    // attacks & ~all_pieces
     std::uint64_t moves(const Square square, const Piece piece, const Colour colour,
                         const std::uint64_t blockers) const;
+    
 
 private:
     static constexpr piece::PawnAttackTable pawn {};

@@ -49,11 +49,29 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const Atta
         at(at),
         friendly_colour(friendly_colour),
         en_passant(en_passant),
-        pinned(pinned_pieces(bb, at, friendly_colour))
+        pinned(pinned_pieces(bb, at, friendly_colour)),
+        danger_squares(king_danger_squares(bb, at, friendly_colour)),
+        checking_pieces(king_attackers(bb, at, friendly_colour))
 {}
 
-// TODO - castling
+// TODO - castling, checks
 void MoveGen::gen() && {
+    // If in check by more than 1 piece, the only way to get out of it is to move
+    // the king
+    if (std::popcount(checking_pieces) > 1) {
+        // king_moves() - king moves/captures that don't intersect with danger squares
+
+    /* if there's only a single checker, the options are: 
+     * 1. Capture the checking piece
+     * 2. A non-king piece blocking the check (if the checker is a sliding piece)
+     * 3. Move the king */
+    } else if (std::popcount(checking_pieces) == 1) {
+        
+    // Not in check
+    } else {
+
+    }
+
     generate_pseudo_pawn_moves();
 
     for (const auto piece_type : NON_PAWN_PIECES) {
@@ -218,6 +236,7 @@ void MoveGen::generate_pseudo_pawn_moves() {
     }
 }
 
+// TODO - can combine king_attackers and king_danger_squares in a single sweep for efficiency
 std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour) {
     const std::uint64_t king_pos { bb.colour_piece_mask(colour, KING) };
     const Square king_sq { from_mask(king_pos) };
@@ -230,6 +249,20 @@ std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Co
         king_attackers |= (piece_mask & at.captures(king_sq, piece, colour, occupied, enemies));
     }
     return king_attackers;
+}
+
+std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour) {
+    std::uint64_t rv {};
+    // remove the king as a king will still be in danger if moving backwards along the
+    // ray of a sliding piece
+    const std::uint64_t blockers { bb.entire_mask() ^ bb.colour_piece_mask(colour, KING) };
+    for (const Piece piece_type : ALL_PIECES) {
+        const std::uint64_t pieces { bb.colour_piece_mask(opposite(colour), piece_type) };
+        for (const auto piece : SetBits(pieces)) {
+            rv |= at.attacks(from_mask(piece), piece_type, colour, blockers);
+        }
+    }
+    return rv;
 }
 
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour) {

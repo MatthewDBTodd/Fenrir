@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "bitboard.h"
+#include "move_gen.h"
 #include "test_helpers.h"
 
 #include <string_view>
@@ -138,4 +139,189 @@ TEST(TestBitboard, TestBitboard) {
     EXPECT_EQ(' ', bb.square_occupant(D4));
     EXPECT_TRUE(bb.square_empty(D4));
     EXPECT_TRUE(bb.square_empty(E4));
+}
+
+TEST(TestBitboard, TestBitboardMoves) {
+    Bitboard bb = *Bitboard::from_fen("8/2k5/8/8/3R4/2K5/8/8");
+    DecodedMove move { move_type_v::Quiet{
+        move_type_v::Common { D4, B4, ROOK, WHITE }
+    }};
+    MoveAction action { move_action_v::Make {} };
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ B4 }), bb.colour_piece_mask(WHITE, ROOK));
+    EXPECT_EQ(mask_from_squares({ C3 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C3, B4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ C3, B4, C7 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ D4 }), bb.colour_piece_mask(WHITE, ROOK));
+    EXPECT_EQ(mask_from_squares({ C3 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C3, D4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ C3, D4, C7 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("8/4qk2/8/3NP3/4K3/8/8/8");
+    move = move_type_v::Capture {
+        move_type_v::Common { D5, E7, KNIGHT, WHITE },
+        QUEEN // captured piece
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ E7 }), bb.colour_piece_mask(WHITE, KNIGHT));
+    EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ E5 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ E4, E5, E7 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ F7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ F7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ E4, E5, E7, F7 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ D5 }), bb.colour_piece_mask(WHITE, KNIGHT));
+    EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ E5 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ E4, E5, D5 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ E7 }), bb.colour_piece_mask(BLACK, QUEEN));
+    EXPECT_EQ(mask_from_squares({ F7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ F7, E7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ E4, E5, D5, F7, E7 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("4k2r/8/8/8/8/8/8/4K3");
+    move = move_type_v::CastleKingSide {
+        move_type_v::Common { E8, G8, KING, BLACK }
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ G8 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ F8 }), bb.colour_piece_mask(BLACK, ROOK));
+    EXPECT_EQ(mask_from_squares({ F8, G8 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ E1 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ E1 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ F8, G8, E1 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ E8 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ H8 }), bb.colour_piece_mask(BLACK, ROOK));
+    EXPECT_EQ(mask_from_squares({ E8, H8 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ E1 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ E1 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ E8, H8, E1 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("1k6/8/8/8/8/8/8/R3K3");
+    move = move_type_v::CastleQueenSide {
+        move_type_v::Common { E1, C1, KING, WHITE }
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ C1 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ D1 }), bb.colour_piece_mask(WHITE, ROOK));
+    EXPECT_EQ(mask_from_squares({ C1, D1 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ B8 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ B8 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ C1, D1, B8 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ E1 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ A1 }), bb.colour_piece_mask(WHITE, ROOK));
+    EXPECT_EQ(mask_from_squares({ E1, A1 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ B8 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ B8 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ E1, A1, B8 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("8/8/8/8/pP2k1K1/8/8/8");
+    move = move_type_v::EnPassant {
+        move_type_v::Common { A4, B3, PAWN, BLACK },
+        B4 // pawn square
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ B3 }), bb.colour_piece_mask(BLACK, PAWN));
+    EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ B3, E4 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ G4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ G4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ B3, E4, G4 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ A4 }), bb.colour_piece_mask(BLACK, PAWN));
+    EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ A4, E4 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ B4 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ G4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ B4, G4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ A4, E4, B4, G4 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("8/8/8/5Pp1/8/8/8/8");
+    move = move_type_v::EnPassant {
+        move_type_v::Common { F5, G6, PAWN, WHITE },
+        G5 // pawn square
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ G6 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ G6 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ G6 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ F5 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ F5 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ G5 }), bb.colour_piece_mask(BLACK, PAWN));
+    EXPECT_EQ(mask_from_squares({ G5 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ F5, G5 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("8/2kPK3/8/8/8/8/8/8");
+    move = move_type_v::MovePromotion {
+        move_type_v::Common { D7, D8, PAWN, WHITE },
+        QUEEN // promotion piece
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ D8 }), bb.colour_piece_mask(WHITE, QUEEN));
+    EXPECT_EQ(mask_from_squares({ E7 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ D8, E7 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ D8, E7, C7 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ D7 }), bb.colour_piece_mask(WHITE, PAWN));
+    EXPECT_EQ(mask_from_squares({ E7 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ D7, E7 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C7 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ D7, E7, C7 }), bb.entire_mask());
+
+    bb = *Bitboard::from_fen("8/8/8/8/5K2/8/2kp4/2R5");
+    move = move_type_v::CapturePromotion {
+        move_type_v::Common { D2, C1, PAWN, BLACK },
+        ROOK, // captured piece
+        ROOK, // promotion piece
+    };
+    action = move_action_v::Make {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ C1 }), bb.colour_piece_mask(BLACK, ROOK));
+    EXPECT_EQ(mask_from_squares({ C2 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C1, C2 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ F4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ F4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C1, C2, F4 }), bb.entire_mask());
+
+    action = move_action_v::UnMake {};
+    std::visit(bb, move, action);
+    EXPECT_EQ(mask_from_squares({ D2 }), bb.colour_piece_mask(BLACK, PAWN));
+    EXPECT_EQ(mask_from_squares({ C2 }), bb.colour_piece_mask(BLACK, KING));
+    EXPECT_EQ(mask_from_squares({ C2, D2 }), bb.colour_mask(BLACK));
+    EXPECT_EQ(mask_from_squares({ C1 }), bb.colour_piece_mask(WHITE, ROOK));
+    EXPECT_EQ(mask_from_squares({ F4 }), bb.colour_piece_mask(WHITE, KING));
+    EXPECT_EQ(mask_from_squares({ C1, F4 }), bb.colour_mask(WHITE));
+    EXPECT_EQ(mask_from_squares({ C1, C2, D2, F4 }), bb.entire_mask());
 }
