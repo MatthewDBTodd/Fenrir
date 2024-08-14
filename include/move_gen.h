@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstdint>
 #include <optional>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -35,6 +36,22 @@ enum class MoveType : std::uint8_t {
 
 class Bitboard;
 
+// returns a mask of all pinned pieces
+std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
+struct KingInfo {
+    const std::uint64_t king_danger_squares; // all squares under attack
+    const std::uint64_t king_checking_pieces; 
+    // Squares friendly pieces can move to to block check or capture the checking piece.
+    // If the number of checking pieces > 1 then this value is ignored for non-king pieces.
+    // If the checking piece is a non-sliding piece, then 
+    // king_check_blocking_squares will == king_checking_pieces, as pieces can only
+    // intervene by capturing that piece
+    const std::uint64_t check_intervention_squares;
+};
+
+KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
 class MoveGen {
 public:
     MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
@@ -43,6 +60,10 @@ public:
     // Made rvalue to prevent mistakes with the object outliving its reference members
     void gen() &&;
 private:
+    MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
+            const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant,
+            const KingInfo king_info);
+
     void push_if_legal(const MoveType type, const std::uint64_t source, const std::uint64_t dest, 
                        const Piece piece, const Piece captured_piece, const Piece promoted_piece);
 
@@ -68,18 +89,18 @@ private:
     const std::uint64_t pinned {};
     const std::uint64_t danger_squares {};
     const std::uint64_t checking_pieces {};
+    const std::uint64_t check_intervention_squares {};
 };
 
-std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour);
+// std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour);
 
-std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
+// std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
 // for a given piece, returns whether it's pinned or not. If it is pinned, it returns 
 // a mask of pieces the piece is legally able to move to, if it's not pinned, an empty mask
 // std::uint64_t pinned(const std::uint64_t piece_pos, const Bitboard &bb, const AttackTable &at,
 //                      const Colour friendly_colour);
 
-// returns a mask of all pinned pieces
-std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour);
 
 
 // struct EncodedMove {

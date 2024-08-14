@@ -48,6 +48,17 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
                  const Colour friendly_colour, 
                  CastlingRights castling, 
                  std::optional<Square> en_passant) :
+        MoveGen(moves, bb, at, friendly_colour, castling, en_passant, 
+                king_danger_squares(bb, at, friendly_colour))
+{}
+
+MoveGen::MoveGen(std::vector<EncodedMove> &moves, 
+                 const Bitboard &bb, 
+                 const AttackTable &at,
+                 const Colour friendly_colour, 
+                 CastlingRights castling, 
+                 std::optional<Square> en_passant,
+                 const KingInfo king_info) :
         moves(moves),
         bb(bb),
         at(at),
@@ -55,8 +66,9 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
         castling_rights(castling),
         en_passant(en_passant),
         pinned(pinned_pieces(bb, at, friendly_colour)),
-        danger_squares(king_danger_squares(bb, at, friendly_colour)),
-        checking_pieces(king_attackers(bb, at, friendly_colour))
+        danger_squares(king_info.king_danger_squares),
+        checking_pieces(king_info.king_checking_pieces),
+        check_intervention_squares(king_info.check_intervention_squares)
 {}
 
 // TODO - castling, checks
@@ -64,7 +76,7 @@ void MoveGen::gen() && {
     // If in check by more than 1 piece, the only way to get out of it is to move
     // the king
     if (std::popcount(checking_pieces) > 1) {
-        // king_moves() - king moves/captures that don't intersect with danger squares
+        return king_moves();
 
     /* if there's only a single checker, the options are: 
      * 1. Capture the checking piece
@@ -163,7 +175,7 @@ void MoveGen::castling(const Piece side) {
         return;
     }
 
-    const std::uint64_t castling_squares { [=] {
+    const std::uint64_t castling_squares { [=, this] {
         if (friendly_colour == WHITE) {
             return side == KING ? from_square(F1) | from_square(G1)
                                 : from_square(C1) | from_square(D1);
@@ -174,7 +186,7 @@ void MoveGen::castling(const Piece side) {
     }() };
 
     const Square king_sq { friendly_colour == WHITE ? E1 : E8 };
-    const Square dest_sq { [=] {
+    const Square dest_sq { [=, this] {
         if (friendly_colour == WHITE) {
             return side == KING ? G1 : C1;
         } else {
@@ -182,7 +194,7 @@ void MoveGen::castling(const Piece side) {
         }
     }() };
 #ifndef NDEBUG
-    const Square rook_sq { [=] {
+    const Square rook_sq { [=, this] {
         if (friendly_colour == WHITE) {
             return side == KING ? H1 : A1;
         } else {
@@ -337,33 +349,89 @@ void MoveGen::generate_pseudo_pawn_moves() {
     }
 }
 
-// TODO - can combine king_attackers and king_danger_squares in a single sweep for efficiency
-std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour) {
-    const std::uint64_t king_pos { bb.colour_piece_mask(colour, KING) };
-    const Square king_sq { from_mask(king_pos) };
-    const Colour enemy_colour { opposite(colour) };
-    const std::uint64_t occupied { bb.entire_mask() };
-    const std::uint64_t enemies { bb.colour_mask(enemy_colour) };
-    std::uint64_t king_attackers {};
-    for (const Piece piece : ALL_PIECES) {
-        const std::uint64_t piece_mask { bb.colour_piece_mask(enemy_colour, piece) };
-        king_attackers |= (piece_mask & at.captures(king_sq, piece, colour, occupied, enemies));
-    }
-    return king_attackers;
-}
+// // TODO - can combine king_attackers and king_danger_squares in a single sweep for efficiency
+// std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour) {
+//     const std::uint64_t king_pos { bb.colour_piece_mask(colour, KING) };
+//     const Square king_sq { from_mask(king_pos) };
+//     const Colour enemy_colour { opposite(colour) };
+//     const std::uint64_t occupied { bb.entire_mask() };
+//     const std::uint64_t enemies { bb.colour_mask(enemy_colour) };
+//     std::uint64_t king_attackers {};
+//     for (const Piece piece : ALL_PIECES) {
+//         const std::uint64_t piece_mask { bb.colour_piece_mask(enemy_colour, piece) };
+//         king_attackers |= (piece_mask & at.captures(king_sq, piece, colour, occupied, enemies));
+//     }
+//     return king_attackers;
+// }
 
-std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour) {
-    std::uint64_t rv {};
+KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour) {
+    std::uint64_t king_danger_squares {};
+    std::uint64_t king_checking_pieces {};
+    std::uint64_t check_intervention_squares {};
+
+    const auto king_pos { bb.colour_piece_mask(colour, KING) };
     // remove the king as a king will still be in danger if moving backwards along the
     // ray of a sliding piece
-    const std::uint64_t blockers { bb.entire_mask() ^ bb.colour_piece_mask(colour, KING) };
+    const std::uint64_t blockers { bb.entire_mask() ^ king_pos };
+
     for (const Piece piece_type : ALL_PIECES) {
         const std::uint64_t pieces { bb.colour_piece_mask(opposite(colour), piece_type) };
         for (const auto piece : SetBits(pieces)) {
-            rv |= at.attacks(from_mask(piece), piece_type, colour, blockers);
+            const auto attacks { at.attacks(from_mask(piece), piece_type, colour, blockers) };
+            king_danger_squares |= attacks;
+            if (!(attacks & king_pos)) { 
+                continue;
+            }
+            // check!
+            king_checking_pieces |= piece;
+            // intervention by capturing the checking piece
+            check_intervention_squares |= piece;
+            /* intervention by blocking the check
+                * 1. If the checking piece is a pawn, this is a no-op: (source --> dest) straight
+                *    lines for two adjacent pieces do not intersect:
+                *
+                *    8 - - - - - - - -    - X - - - - - -    - - - - - - - -
+                *    7 - - P - - - - -    - - X - - - - -    - - - - - - - -
+                *    6 - - - X - - - -    - - - K - - - -    - - - - - - - -
+                *    5 - - - - X - - -    - - - - - - - -    - - - - - - - -
+                *    4 - - - - - X - -  & - - - - - - - -  = - - - - - - - - 
+                *    3 - - - - - - X -    - - - - - - - -    - - - - - - - -
+                *    2 - - - - - - - X    - - - - - - - -    - - - - - - - -
+                *    1 - - - - - - - -    - - - - - - - -    - - - - - - - -
+                *      A B C D E F G H    A B C D E F G H    A B C D E F G H
+                * 
+                *    Pawn is on C7, King on D6, masks are marked with X, you can see they do not
+                *    intersect.
+                * 2. If the checking piece is a knight, this is a no-op: (source --> dest) is not a 
+                *    straight line so the source_dest_mask will be 0
+                * 3. If the checking piece is a sliding piece, then the attack mask will go past
+                *    the king position, as we removed the king from the board mask so we could
+                *    accurately calculate danger squares for the king. So we AND the two
+                *    (source --> dest) straight line masks to get the squares in-between the king
+                *    and the checking piece:
+                *    
+                *    8 - - - X - - - -    - - - - - - - -    - - - - - - - -
+                *    7 - - - X - - - -    - - - R - - - -    - - - R - - - -
+                *    6 - - - X - - - -    - - - X - - - -    - - - X - - - -
+                *    5 - - - X - - - -    - - - X - - - -    - - - X - - - -
+                *    4 - - - X - - - -  & - - - X - - - -  = - - - X - - - -
+                *    3 - - - K - - - -    - - - X - - - -    - - - K - - - -
+                *    2 - - - - - - - -    - - - X - - - -    - - - - - - - -
+                *    1 - - - - - - - -    - - - X - - - -    - - - - - - - -
+                *      A B C D E F G H    A B C D E F G H    A B C D E F G H
+                * 
+                *  */
+            check_intervention_squares |= (
+                direction::SOURCE_DEST_MASKS[from_mask(king_pos)][from_mask(piece)] &
+                direction::SOURCE_DEST_MASKS[from_mask(piece)][from_mask(king_pos)]
+            );
         }
     }
-    return rv;
+    return KingInfo {
+        king_danger_squares,
+        king_checking_pieces,
+        check_intervention_squares
+    };
 }
 
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour) {
