@@ -2,10 +2,24 @@
 
 #include "types.h"
 
+#include <cassert>
 #include <cstdint>
 
 class CastlingRights {
 public:
+    bool can_castle(const Colour colour, const Piece piece) {
+        assert(colour != NUM_COLOURS);
+        assert(piece == KING || piece == QUEEN);
+
+        if (colour == WHITE) {
+            return piece == KING ? castling & WHITE_KINGSIDE
+                                 : castling & WHITE_QUEENSIDE;
+        } else {
+            return piece == KING ? castling & BLACK_KINGSIDE
+                                 : castling & BLACK_QUEENSIDE;
+        }
+    }
+
     bool can_kingside(const Colour colour) const {
         return colour == WHITE ? castling & WHITE_KINGSIDE
                                : castling & BLACK_KINGSIDE;

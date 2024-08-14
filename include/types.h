@@ -36,12 +36,12 @@ enum Square : std::uint8_t {
     NUM_SQUARES,
 };
 
-inline Square from_mask(const std::uint64_t mask) {
+inline constexpr Square from_mask(const std::uint64_t mask) {
     assert(std::popcount(mask) == 1);
     return static_cast<Square>(std::countr_zero(mask));
 }
 
-inline std::uint64_t from_square(const Square square) {
+inline constexpr std::uint64_t from_square(const Square square) {
     assert(square != NUM_SQUARES);
     return (1ul << square);
 }

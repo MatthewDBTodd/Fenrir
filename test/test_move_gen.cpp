@@ -2,6 +2,7 @@
 
 #include "attack_table.h"
 #include "bitboard.h"
+#include "castling.h"
 #include "move_gen.h"
 #include "test_helpers.h"
 #include "types.h"
@@ -30,7 +31,7 @@ TEST_F(TestMoveGen, TestKingAttackers) {
 TEST_F(TestMoveGen, TestGenPseudoLegalMoves) {
     Bitboard bb { *Bitboard::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") };
     std::vector<EncodedMove> moves;
-    MoveGen(moves, bb, at, WHITE, std::nullopt).gen();
+    MoveGen(moves, bb, at, WHITE, CastlingRights {}, std::nullopt).gen();
     EXPECT_EQ(20, moves.size());
 }
 

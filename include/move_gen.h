@@ -1,6 +1,7 @@
 #pragma once
 
 #include "attack_table.h"
+#include "castling.h"
 #include "types.h"
 
 #include <bit>
@@ -37,7 +38,7 @@ class Bitboard;
 class MoveGen {
 public:
     MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
-            const Colour friendly_colour, std::optional<Square> en_passant);
+            const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant);
 
     // Made rvalue to prevent mistakes with the object outliving its reference members
     void gen() &&;
@@ -55,12 +56,13 @@ private:
     void quiet_moves_for_piece_type(const Piece piece_type);
 
     void king_moves();
-    void castling();
+    void castling(const Piece side);
 
     std::vector<EncodedMove> &moves;
     const Bitboard &bb;
     const AttackTable &at;
     const Colour friendly_colour;
+    CastlingRights castling_rights;
     std::optional<Square> en_passant;
 
     const std::uint64_t pinned {};

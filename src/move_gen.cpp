@@ -42,12 +42,17 @@ static bool is_promotion(const std::uint64_t targets) {
     return (targets & PROMOTION_RANKS) > 0;
 }
 
-MoveGen::MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
-                 const Colour friendly_colour, std::optional<Square> en_passant) :
+MoveGen::MoveGen(std::vector<EncodedMove> &moves, 
+                 const Bitboard &bb, 
+                 const AttackTable &at,
+                 const Colour friendly_colour, 
+                 CastlingRights castling, 
+                 std::optional<Square> en_passant) :
         moves(moves),
         bb(bb),
         at(at),
         friendly_colour(friendly_colour),
+        castling_rights(castling),
         en_passant(en_passant),
         pinned(pinned_pieces(bb, at, friendly_colour)),
         danger_squares(king_danger_squares(bb, at, friendly_colour)),
@@ -71,6 +76,9 @@ void MoveGen::gen() && {
     } else {
 
     }
+
+    castling(KING);
+    castling(QUEEN);
 
     generate_pseudo_pawn_moves();
 
@@ -144,8 +152,60 @@ void MoveGen::king_moves() {
     }
 }
 
-void MoveGen::castling() {
+// We invalidate castling if the king/rook ever moves, so all we need to check is
+// if the path is clear and whether the intermediate squares are under attack.
+// This means things fall over if the castling rights we pass in are incorrect, we
+// assume if castling is allowed the king/rook are on their original squares.
+void MoveGen::castling(const Piece side) {
+    assert(side == KING || side == QUEEN);
 
+    if (!castling_rights.can_castle(friendly_colour, side)) {
+        return;
+    }
+
+    const std::uint64_t castling_squares { [=] {
+        if (friendly_colour == WHITE) {
+            return side == KING ? from_square(F1) | from_square(G1)
+                                : from_square(C1) | from_square(D1);
+        } else {
+            return side == KING ? from_square(F8) | from_square(G8)
+                                : from_square(C8) | from_square(D8);
+        }
+    }() };
+
+    const Square king_sq { friendly_colour == WHITE ? E1 : E8 };
+    const Square dest_sq { [=] {
+        if (friendly_colour == WHITE) {
+            return side == KING ? G1 : C1;
+        } else {
+            return side == KING ? G8 : C8;
+        }
+    }() };
+#ifndef NDEBUG
+    const Square rook_sq { [=] {
+        if (friendly_colour == WHITE) {
+            return side == KING ? H1 : A1;
+        } else {
+            return side == KING ? H8 : A8;
+        }
+    }() };
+#endif
+
+    // check the king hasn't moved
+    assert(from_mask(bb.colour_piece_mask(friendly_colour, KING)) == king_sq);
+    // check the rook hasn't moved
+    assert(bb.colour_piece_mask(friendly_colour, ROOK) & from_square(rook_sq));
+
+    //     are the intermediate squares blocked? | are the intermediate squares under attack?
+    if ( !(castling_squares & bb.entire_mask() || castling_squares & danger_squares) ) {
+        const auto type { side == KING ? MoveType::CASTLE_KINGSIDE : MoveType::CASTLE_QUEENSIDE };
+        moves.emplace_back(static_cast<std::uint32_t>(type),
+                            static_cast<std::uint32_t>(king_sq),
+                            static_cast<std::uint32_t>(dest_sq),
+                            static_cast<std::uint32_t>(KING),
+                            static_cast<std::uint32_t>(NUM_PIECES),
+                            static_cast<std::uint32_t>(NUM_PIECES));
+    }
 }
 
 void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {
