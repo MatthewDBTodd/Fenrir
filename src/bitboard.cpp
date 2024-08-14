@@ -108,6 +108,14 @@ char Bitboard::square_occupant(const Square square) const {
     }
 }
 
+void Bitboard::make_move(const DecodedMove &move) {
+    std::visit(*this, move, MoveAction { move_action_v::Make {} });
+}
+
+void Bitboard::unmake_move(const DecodedMove &move) {
+    std::visit(*this, move, MoveAction { move_action_v::UnMake {} });
+}
+
 void Bitboard::operator()(const move_type_v::Quiet quiet, move_action_v::Make) {
     remove_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.source);
     place_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.dest);

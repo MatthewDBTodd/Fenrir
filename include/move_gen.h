@@ -54,6 +54,9 @@ private:
     void captures_for_single_piece(const Piece piece_type, const std::uint64_t single_src_piece);
     void quiet_moves_for_piece_type(const Piece piece_type);
 
+    void king_moves();
+    void castling();
+
     std::vector<EncodedMove> &moves;
     const Bitboard &bb;
     const AttackTable &at;

@@ -74,11 +74,13 @@ void MoveGen::gen() && {
 
     generate_pseudo_pawn_moves();
 
+    // TODO - remove king from NON_PAWN_PIECES as they have special functions
     for (const auto piece_type : NON_PAWN_PIECES) {
         captures_for_piece_type(piece_type);
     }
 
 
+    // TODO - remove king from NON_PAWN_PIECES as they have special functions
     for (const auto piece_type : NON_PAWN_PIECES) {
         quiet_moves_for_piece_type(piece_type);
     }
@@ -105,6 +107,45 @@ void MoveGen::push_if_legal(
                            static_cast<std::uint32_t>(captured_piece),
                            static_cast<std::uint32_t>(promoted_piece));
     }
+}
+
+void MoveGen::king_moves() {
+    const Square king_sq { from_mask(bb.colour_piece_mask(friendly_colour, KING)) };
+    const std::uint64_t blockers { bb.entire_mask() };
+    std::uint64_t king_attacks { 
+        at.attacks(king_sq, KING, friendly_colour, blockers) 
+    };
+    king_attacks ^= danger_squares;
+    for (const auto capturable : CAPTURABLE_PIECES) {
+        const std::uint64_t captures_of_piece {
+            bb.colour_piece_mask(opposite(friendly_colour), capturable) & king_attacks
+        };
+        king_attacks ^= captures_of_piece;
+        for (const auto capture_of_piece : SetBits(captures_of_piece)) {
+            // don't need to do legal check as we've already covered king danger
+            // squares, and the other legal checks (pins/en-passant) don't apply 
+            // to the king
+            moves.emplace_back(static_cast<std::uint32_t>(MoveType::CAPTURE),
+                               static_cast<std::uint32_t>(king_sq),
+                               static_cast<std::uint32_t>(from_mask(capture_of_piece)),
+                               static_cast<std::uint32_t>(KING),
+                               static_cast<std::uint32_t>(capturable),
+                               static_cast<std::uint32_t>(NUM_PIECES));
+        }
+    }
+    // all remaining moves are quiet moves
+    for (const auto quiet_move : SetBits(king_attacks)) {
+        moves.emplace_back(static_cast<std::uint32_t>(MoveType::QUIET),
+                           static_cast<std::uint32_t>(king_sq),
+                           static_cast<std::uint32_t>(from_mask(quiet_move)),
+                           static_cast<std::uint32_t>(KING),
+                           static_cast<std::uint32_t>(NUM_PIECES),
+                           static_cast<std::uint32_t>(NUM_PIECES));
+    }
+}
+
+void MoveGen::castling() {
+
 }
 
 void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {

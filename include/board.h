@@ -21,9 +21,13 @@ private:
     Bitboard bitboard; // 64 
     std::uint16_t total_half_moves {}; // half moves since the start of the game
     std::uint8_t quiet_half_moves {}; // half moves since the last capture/pawn move, max 50
-    Colour turn_colour;
-    std::uint8_t castling_rights : 4;
-    std::optional<Square> en_passant;
+    Colour turn_colour { WHITE };
+    // std::uint8_t castling_rights : 4;
+    std::uint8_t w_castle_kingside : 1 { 1 };
+    std::uint8_t w_castle_queenside : 1 { 1 };
+    std::uint8_t b_castle_kingside : 1 { 1 };
+    std::uint8_t b_castle_queenside : 1 { 1 };
+    std::optional<Square> en_passant {};
 
     // saved state:
     // prev quiet half moves : needed for all

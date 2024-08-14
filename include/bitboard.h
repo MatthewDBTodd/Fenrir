@@ -49,6 +49,9 @@ public:
 
     char square_occupant(const Square square) const;
 
+    void make_move(const DecodedMove &move);
+    void unmake_move(const DecodedMove &move);
+
     void operator()(const move_type_v::Quiet, move_action_v::Make);
     void operator()(const move_type_v::Quiet, move_action_v::UnMake);
     void operator()(const move_type_v::Capture, move_action_v::Make);
@@ -69,6 +72,7 @@ public:
     friend bool operator==(const Bitboard &a, const Bitboard &b);
     friend bool operator!=(const Bitboard &a, const Bitboard &b);
     friend std::ostream& operator<<(std::ostream &os, const Bitboard &bb);
+
 private:
     std::array<std::uint64_t, NUM_COLOURS> colours {};
     std::array<std::uint64_t, NUM_PIECES> pieces {};
