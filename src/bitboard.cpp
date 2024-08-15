@@ -57,7 +57,7 @@ std::optional<Bitboard> Bitboard::from_fen(std::string_view pieces) {
 
 void Bitboard::place_unchecked(const Colour colour, const Piece piece, 
                                const Square square) noexcept {
-    const std::uint64_t mask { 1ull << square };
+    const std::uint64_t mask { 1ul << square };
     colours[colour] |= mask;
     pieces[piece] |= mask;
 }
@@ -65,20 +65,20 @@ void Bitboard::place_unchecked(const Colour colour, const Piece piece,
 void Bitboard::remove_unchecked(const Colour colour, 
                                 const Piece piece, 
                                 const Square square) noexcept {
-    const std::uint64_t mask { 1ull << square };
+    const std::uint64_t mask { 1ul << square };
     colours[colour] ^= mask;
     pieces[piece] ^= mask;
 }
 
 void Bitboard::clear_unchecked(const Square square) noexcept {
-    const std::uint64_t mask { 1ull << square };
+    const std::uint64_t mask { 1ul << square };
     const auto mask_xor = [=](const std::uint64_t n) { return n ^ mask; };
     std::transform(colours.begin(), colours.end(), colours.begin(), mask_xor);
     std::transform(pieces.begin(), pieces.end(), pieces.begin(), mask_xor);
 }
 
 char Bitboard::square_occupant(const Square square) const {
-    const std::uint64_t mask { 1ull << square };
+    const std::uint64_t mask { 1ul << square };
     if ((mask & entire_mask()) == 0) {
         return ' ';
     }

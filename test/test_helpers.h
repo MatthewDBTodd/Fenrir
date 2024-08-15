@@ -40,7 +40,7 @@ inline std::uint64_t fen_to_hex(std::string_view fen) {
                 }
                 shift -= n;
             } else {
-                result |= (1ull << shift);
+                result |= (1ul << shift);
                 if (shift == 0) {
                     break;
                 }
@@ -71,7 +71,7 @@ inline std::uint64_t mask_from_squares(const std::vector<Square> &occupied_squar
         throw std::exception();
     }
     std::uint64_t rv {};
-    for (const Square sq : occupied_squares) { rv |= (1ull << sq); }
+    for (const Square sq : occupied_squares) { rv |= (1ul << sq); }
     return rv;
 }
 

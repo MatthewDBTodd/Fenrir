@@ -11,7 +11,7 @@ namespace piece {
 constexpr std::array<std::uint64_t, NUM_SQUARES> 
 generate_knight_att_squares() noexcept {
     std::array<std::uint64_t, NUM_SQUARES> att_squares;
-    std::uint64_t mask { 1ull };
+    std::uint64_t mask { 1ul };
     for (std::size_t i = A1; i < NUM_SQUARES; ++i) {
         const auto squares {
               direction::north_north_east(mask) 

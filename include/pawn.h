@@ -10,18 +10,18 @@
 namespace {
 
 constexpr std::uint64_t SECOND_RANK {
-      (1ull << A2) | (1ull << B2) | (1ull << C2) | (1ull << D2)
-    | (1ull << E2) | (1ull << F2) | (1ull << G2) | (1ull << H2)
+      (1ul << A2) | (1ul << B2) | (1ul << C2) | (1ul << D2)
+    | (1ul << E2) | (1ul << F2) | (1ul << G2) | (1ul << H2)
 };
 
 constexpr std::uint64_t SEVENTH_RANK {
-      (1ull << A7) | (1ull << B7) | (1ull << C7) | (1ull << D7)
-    | (1ull << E7) | (1ull << F7) | (1ull << G7) | (1ull << H7)
+      (1ul << A7) | (1ul << B7) | (1ul << C7) | (1ul << D7)
+    | (1ul << E7) | (1ul << F7) | (1ul << G7) | (1ul << H7)
 };
 
 constexpr std::array<std::uint64_t, NUM_SQUARES> gen_attacks(const Colour colour) {
     std::array<std::uint64_t, NUM_SQUARES> attacks {};
-    std::uint64_t mask { 1ull << A2 };
+    std::uint64_t mask { 1ul << A2 };
     for (std::size_t i = A2; i < A8; ++i) {
         if (colour == WHITE) {
             attacks[i] = direction::north_east(mask) 
@@ -37,7 +37,7 @@ constexpr std::array<std::uint64_t, NUM_SQUARES> gen_attacks(const Colour colour
 
 constexpr std::array<std::uint64_t, NUM_SQUARES> gen_moves(const Colour colour) {
     std::array<std::uint64_t, NUM_SQUARES> moves {};
-    std::uint64_t mask { 1ull << A2 };
+    std::uint64_t mask { 1ul << A2 };
     for (std::size_t i = A2; i < A8; ++i) {
         if (colour == WHITE) {
             std::uint64_t result { direction::north(mask) };

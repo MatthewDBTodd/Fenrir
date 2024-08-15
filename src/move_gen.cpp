@@ -377,7 +377,9 @@ KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Co
     for (const Piece piece_type : ALL_PIECES) {
         const std::uint64_t pieces { bb.colour_piece_mask(opposite(colour), piece_type) };
         for (const auto piece : SetBits(pieces)) {
-            const auto attacks { at.attacks(from_mask(piece), piece_type, colour, blockers) };
+            const auto attacks { 
+                at.attacks(from_mask(piece), piece_type, opposite(colour), blockers) 
+            };
             king_danger_squares |= attacks;
             if (!(attacks & king_pos)) { 
                 continue;

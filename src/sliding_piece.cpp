@@ -151,7 +151,7 @@ std::vector<SquareAttackPermutation> square_attack_permutations(
 
 Magic Magic::init(const Square square, const Piece piece) {
     assert(piece == ROOK || piece == BISHOP);
-    const std::uint64_t sq_mask { 1ull << square };
+    const std::uint64_t sq_mask { 1ul << square };
     const std::uint64_t raw_block_mask {
         piece == ROOK ? ROOK_MASKS[square] : BISHOP_MASKS[square]
     };

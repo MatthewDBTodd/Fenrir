@@ -40,14 +40,14 @@ class Bitboard;
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour);
 
 struct KingInfo {
-    const std::uint64_t king_danger_squares; // all squares under attack
-    const std::uint64_t king_checking_pieces; 
+    std::uint64_t king_danger_squares; // all squares under attack
+    std::uint64_t king_checking_pieces; 
     // Squares friendly pieces can move to to block check or capture the checking piece.
     // If the number of checking pieces > 1 then this value is ignored for non-king pieces.
     // If the checking piece is a non-sliding piece, then 
     // king_check_blocking_squares will == king_checking_pieces, as pieces can only
     // intervene by capturing that piece
-    const std::uint64_t check_intervention_squares;
+    std::uint64_t check_intervention_squares;
 };
 
 KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);

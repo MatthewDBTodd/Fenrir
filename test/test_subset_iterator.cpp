@@ -28,7 +28,7 @@ TEST(TestSubsets, TestSubsets) {
         { 0, { 0 } },
         { 1, { 0, 1 } },
         { 255, range_to_vec(0, 256) },
-        { (1ull << 63), { 0, (1ull << 63) } }
+        { (1ul << 63), { 0, (1ul << 63) } }
     };
     for (const auto &test_case : test_cases) {
         const std::vector<std::uint64_t> result(Subsets(test_case.val).begin(),

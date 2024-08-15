@@ -9,26 +9,26 @@ namespace {
 
 constexpr std::uint64_t NOT_A_FILE {
       std::numeric_limits<std::uint64_t>::max() 
-    ^ (1ull << A1) ^ (1ull << A2) ^ (1ull << A3) ^ (1ull << A4)
-    ^ (1ull << A5) ^ (1ull << A6) ^ (1ull << A7) ^ (1ull << A8)
+    ^ (1ul << A1) ^ (1ul << A2) ^ (1ul << A3) ^ (1ul << A4)
+    ^ (1ul << A5) ^ (1ul << A6) ^ (1ul << A7) ^ (1ul << A8)
 };
 
 constexpr std::uint64_t NOT_H_FILE {
       std::numeric_limits<std::uint64_t>::max()
-    ^ (1ull << H1) ^ (1ull << H2) ^ (1ull << H3) ^ (1ull << H4)
-    ^ (1ull << H5) ^ (1ull << H6) ^ (1ull << H7) ^ (1ull << H8)
+    ^ (1ul << H1) ^ (1ul << H2) ^ (1ul << H3) ^ (1ul << H4)
+    ^ (1ul << H5) ^ (1ul << H6) ^ (1ul << H7) ^ (1ul << H8)
 };
 
 constexpr std::uint64_t NOT_AB_FILE {
     NOT_A_FILE
-    ^ (1ull << B1) ^ (1ull << B2) ^ (1ull << B3) ^ (1ull << B4)
-    ^ (1ull << B5) ^ (1ull << B6) ^ (1ull << B7) ^ (1ull << B8)
+    ^ (1ul << B1) ^ (1ul << B2) ^ (1ul << B3) ^ (1ul << B4)
+    ^ (1ul << B5) ^ (1ul << B6) ^ (1ul << B7) ^ (1ul << B8)
 };
 
 constexpr std::uint64_t NOT_GH_FILE {
     NOT_H_FILE
-    ^ (1ull << G1) ^ (1ull << G2) ^ (1ull << G3) ^ (1ull << G4)
-    ^ (1ull << G5) ^ (1ull << G6) ^ (1ull << G7) ^ (1ull << G8)
+    ^ (1ul << G1) ^ (1ul << G2) ^ (1ul << G3) ^ (1ul << G4)
+    ^ (1ul << G5) ^ (1ul << G6) ^ (1ul << G7) ^ (1ul << G8)
 };
 
 } // namespace
