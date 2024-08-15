@@ -77,11 +77,14 @@ void Bitboard::clear_unchecked(const Square square) noexcept {
     std::transform(pieces.begin(), pieces.end(), pieces.begin(), mask_xor);
 }
 
-char Bitboard::square_occupant(const Square square) const {
-    const std::uint64_t mask { 1ul << square };
+std::optional<std::pair<Colour, Piece>> Bitboard::square_occupant(const Square square) const {
+    const std::uint64_t mask { from_square(square) };
     if ((mask & entire_mask()) == 0) {
-        return ' ';
+        return std::nullopt;
     }
+
+    const Colour colour { mask & colour_mask(WHITE) ? WHITE : BLACK };
+
     // If this ends up being suboptimal I can optimise by storing an array of indexes
     // to the piece/colours array 
     const auto res { std::find_if(pieces.begin(), pieces.end(), 
@@ -89,7 +92,16 @@ char Bitboard::square_occupant(const Square square) const {
         return (mask & n) > 0;
     })};
     const Piece piece { static_cast<Piece>(std::distance(pieces.begin(), res)) };
-    assert (piece < NUM_PIECES);
+    assert(piece < NUM_PIECES);
+    return std::make_pair(colour, piece);
+}
+
+char Bitboard::square_representation(const Square square) const {
+    const auto occupant { square_occupant(square) };
+    if (!occupant.has_value()) {
+        return ' ';
+    }
+    const Piece piece { occupant->second };
     const char piece_char = [piece] {
         switch (piece) {
             case PAWN: return 'p';
@@ -101,7 +113,9 @@ char Bitboard::square_occupant(const Square square) const {
             default: return ' ';
         }
     }();
-    if ((mask & colour_mask(WHITE)) > 0) {
+
+    const Colour colour { occupant->first };
+    if (colour == WHITE) {
         return std::toupper(piece_char);
     } else {
         return piece_char;
@@ -297,7 +311,7 @@ std::ostream& operator<<(std::ostream &os, const Bitboard &bb) {
         os << std::endl;
         os << " " << rank << " ";
         for (const int file : std::views::iota(0, 8)) {
-            os << "| " << bb.square_occupant(static_cast<Square>(rank_idx + file))
+            os << "| " << bb.square_representation(static_cast<Square>(rank_idx + file))
                << " ";
         }
         os << "|" << std::endl;

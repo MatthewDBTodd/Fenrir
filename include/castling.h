@@ -4,36 +4,34 @@
 
 #include <cassert>
 #include <cstdint>
+#include <optional>
+#include <string_view>
 
 class CastlingRights {
 public:
+    CastlingRights() = default;
+
+    static std::optional<CastlingRights> from_fen(std::string_view castling);
+
     bool can_castle(const Colour colour, const Piece piece) {
+        return castling & mask(colour, piece);
+    }
+
+    void invalidate(const Colour colour, const Piece piece) {
+        castling ^= mask(colour, piece);
+    }
+
+private:
+    CastlingRights(const std::uint8_t mask) :
+        castling(mask)
+    {}
+
+    static std::uint8_t mask(const Colour colour, const Piece piece) {
         assert(colour != NUM_COLOURS);
         assert(piece == KING || piece == QUEEN);
-
-        if (colour == WHITE) {
-            return piece == KING ? castling & WHITE_KINGSIDE
-                                 : castling & WHITE_QUEENSIDE;
-        } else {
-            return piece == KING ? castling & BLACK_KINGSIDE
-                                 : castling & BLACK_QUEENSIDE;
-        }
+        // bit ugly but avoids branches
+        return 1 << ((colour * 2) + (piece - QUEEN));
     }
 
-    bool can_kingside(const Colour colour) const {
-        return colour == WHITE ? castling & WHITE_KINGSIDE
-                               : castling & BLACK_KINGSIDE;
-    }
-
-    bool can_queenside(const Colour colour) const {
-        return colour == WHITE ? castling & WHITE_QUEENSIDE
-                               : castling & BLACK_QUEENSIDE;
-    }
-private:
     std::uint8_t castling { 0b1111 };
-
-    static constexpr std::uint8_t WHITE_KINGSIDE { 0x1 };
-    static constexpr std::uint8_t WHITE_QUEENSIDE { 0x2 };
-    static constexpr std::uint8_t BLACK_KINGSIDE { 0x4 };
-    static constexpr std::uint8_t BLACK_QUEENSIDE { 0x8 };
 };

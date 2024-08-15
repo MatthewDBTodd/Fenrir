@@ -50,16 +50,24 @@ static constexpr std::array<Piece, NUM_PIECES> ALL_PIECES {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
 };
 
+// In descending order of value
 static constexpr std::array<Piece, NUM_PIECES-1> CAPTURABLE_PIECES {
     QUEEN, ROOK, BISHOP, KNIGHT, PAWN
 };
 
+// In descending order of value
 static constexpr std::array<Piece, 4> PROMOTION_PIECES {
     QUEEN, ROOK, BISHOP, KNIGHT
 };
 
-static constexpr std::array<Piece, NUM_PIECES-1> NON_PAWN_PIECES {
-    KNIGHT, BISHOP, ROOK, QUEEN, KING
+// Pawns and kings have special considerations in move gen so are handled separately
+// TODO - think of a better name for this
+static constexpr std::array<Piece, 4> NORMAL_PIECES {
+    KNIGHT, BISHOP, ROOK, QUEEN
+};
+
+static constexpr std::array<Piece, 5> NON_KING_PIECES {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN
 };
 
 inline constexpr Colour opposite(const Colour colour) {

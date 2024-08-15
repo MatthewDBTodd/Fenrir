@@ -8,6 +8,7 @@
 #include <iostream>
 #include <optional>
 #include <string_view>
+#include <utility>
 
 // Any function with "unchecked" in the name means there's no checking of the validity
 // of the operation. E.g. it doesn't check if the requested square is already occupied
@@ -47,7 +48,8 @@ public:
         return !static_cast<bool>(entire_mask() & (1 << square));
     }
 
-    char square_occupant(const Square square) const;
+    std::optional<std::pair<Colour, Piece>> square_occupant(const Square square) const;
+    char square_representation(const Square square) const;
 
     void make_move(const DecodedMove &move);
     void unmake_move(const DecodedMove &move);

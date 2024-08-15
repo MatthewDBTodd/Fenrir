@@ -67,7 +67,8 @@ private:
     void push_if_legal(const MoveType type, const std::uint64_t source, const std::uint64_t dest, 
                        const Piece piece, const Piece captured_piece, const Piece promoted_piece);
 
-    void generate_pseudo_pawn_moves();
+    void escape_single_check();
+    void generate_pawn_moves();
     void single_pawn_moves(const std::uint64_t single_pawn);
     void single_pawn_captures(const std::uint64_t single_pawn, const std::uint64_t captures, 
                               const Piece capturable, const Colour enemy_colour);

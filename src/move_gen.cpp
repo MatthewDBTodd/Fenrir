@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <cmath>
 #include <exception>
 #include <utility>
 
@@ -71,39 +72,32 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
         check_intervention_squares(king_info.check_intervention_squares)
 {}
 
-// TODO - castling, checks
 void MoveGen::gen() && {
     // If in check by more than 1 piece, the only way to get out of it is to move
     // the king
     if (std::popcount(checking_pieces) > 1) {
         return king_moves();
 
-    /* if there's only a single checker, the options are: 
-     * 1. Capture the checking piece
-     * 2. A non-king piece blocking the check (if the checker is a sliding piece)
-     * 3. Move the king */
     } else if (std::popcount(checking_pieces) == 1) {
-        
+        return escape_single_check();
     // Not in check
-    } else {
-
-    }
+    } 
 
     castling(KING);
     castling(QUEEN);
 
-    generate_pseudo_pawn_moves();
+    generate_pawn_moves();
 
-    // TODO - remove king from NON_PAWN_PIECES as they have special functions
-    for (const auto piece_type : NON_PAWN_PIECES) {
+    for (const auto piece_type : NORMAL_PIECES) {
         captures_for_piece_type(piece_type);
     }
 
 
-    // TODO - remove king from NON_PAWN_PIECES as they have special functions
-    for (const auto piece_type : NON_PAWN_PIECES) {
+    for (const auto piece_type : NORMAL_PIECES) {
         quiet_moves_for_piece_type(piece_type);
     }
+
+    king_moves();
 }
 
 static bool in_line_with_king(const std::uint64_t source, const std::uint64_t dest,
@@ -129,12 +123,65 @@ void MoveGen::push_if_legal(
     }
 }
 
+/* if there's only a single checker, the options are: 
+* 1. Capture the checking piece
+* 2. A non-king piece blocking the check (if the checker is a sliding piece)
+* 3. Move the king */
+void MoveGen::escape_single_check() {
+    // captures of checking piece
+    for (const auto piece_type : ALL_PIECES) {
+        const auto all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
+        for (const auto single_src_piece : SetBits(all_src_pieces)) {
+            const auto captures_of_checking_piece {
+                at.captures(from_mask(single_src_piece), piece_type, friendly_colour,
+                            bb.entire_mask(), bb.colour_mask(opposite(friendly_colour)))
+                & check_intervention_squares 
+            };
+            if (captures_of_checking_piece) {
+                const auto checking_piece { bb.square_occupant(from_mask(checking_pieces)) };
+                assert(checking_piece.has_value());
+                assert(checking_piece->first == opposite(friendly_colour));
+                push_if_legal(MoveType::CAPTURE, single_src_piece, checking_pieces, piece_type,
+                              checking_piece->second, NUM_PIECES);
+            }
+        }
+    }
+
+    // blocks
+    for (const auto piece_type : NON_KING_PIECES) {
+        const auto all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
+        for (const auto single_src_piece : SetBits(all_src_pieces)) {
+            const auto blocks {
+                at.moves(from_mask(single_src_piece), piece_type, friendly_colour, bb.entire_mask())
+                & check_intervention_squares
+            };
+            for (const auto dest : SetBits(blocks)) {
+                const MoveType type = [=] {
+                    if (piece_type == PAWN) {
+                        const int diff {
+                            std::abs(std::countr_zero(dest) - std::countr_zero(single_src_piece))
+                        };
+                        assert(diff == 8 || diff == 16);
+                        return diff == 16 ? MoveType::DOUBLE_PAWN_PUSH : MoveType::QUIET;
+                    }
+                    return MoveType::QUIET;
+                }();
+                push_if_legal(type, single_src_piece, dest, piece_type, 
+                              NUM_PIECES, NUM_PIECES);
+            }
+        }
+    }
+
+    king_moves();
+}
+
 void MoveGen::king_moves() {
     const Square king_sq { from_mask(bb.colour_piece_mask(friendly_colour, KING)) };
     const std::uint64_t blockers { bb.entire_mask() };
     std::uint64_t king_attacks { 
         at.attacks(king_sq, KING, friendly_colour, blockers) 
     };
+    king_attacks ^= bb.colour_mask(friendly_colour);
     king_attacks ^= danger_squares;
     for (const auto capturable : CAPTURABLE_PIECES) {
         const std::uint64_t captures_of_piece {
@@ -342,7 +389,7 @@ void MoveGen::single_pawn_moves(const std::uint64_t single_pawn) {
     }
 }
 
-void MoveGen::generate_pseudo_pawn_moves() {
+void MoveGen::generate_pawn_moves() {
     const std::uint64_t all_pawns { bb.colour_piece_mask(friendly_colour, PAWN) };
     for (const auto single_pawn : SetBits(all_pawns)) {
         single_pawn_moves(single_pawn);

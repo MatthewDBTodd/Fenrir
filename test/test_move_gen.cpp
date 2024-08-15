@@ -28,11 +28,18 @@ const AttackTable TestMoveGen::at {};
 //     EXPECT_EQ(mask_from_squares({ A1 }), king_attackers(bb, at, BLACK));
 // }
 
-TEST_F(TestMoveGen, TestGenPseudoLegalMoves) {
+TEST_F(TestMoveGen, TestMoveGen) {
     Bitboard bb { *Bitboard::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") };
+    CastlingRights castling { *CastlingRights::from_fen("KQkq") };
     std::vector<EncodedMove> moves;
-    MoveGen(moves, bb, at, WHITE, CastlingRights {}, std::nullopt).gen();
+    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
     EXPECT_EQ(20, moves.size());
+
+    moves.clear();
+    bb = *Bitboard::from_fen("8/8/8/3k4/8/3p4/3P4/3K4");
+    castling = *CastlingRights::from_fen("-");
+    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
+    EXPECT_EQ(2, moves.size());
 }
 
 TEST_F(TestMoveGen, TestPinnedPieces) {

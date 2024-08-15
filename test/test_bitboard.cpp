@@ -128,15 +128,15 @@ TEST(TestBitboard, TestBitboard) {
     EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_mask(BLACK));
     EXPECT_EQ(mask_from_squares({ E4 }), bb.piece_mask(ROOK));
     EXPECT_EQ(mask_from_squares({ E4 }), bb.colour_piece_mask(BLACK, ROOK));
-    EXPECT_EQ('r', bb.square_occupant(E4));
-    EXPECT_EQ(' ', bb.square_occupant(D4));
+    EXPECT_EQ('r', bb.square_representation(E4));
+    EXPECT_EQ(' ', bb.square_representation(D4));
     EXPECT_TRUE(bb.square_empty(D4));
     EXPECT_FALSE(bb.square_empty(E4));
 
     bb.remove_unchecked(BLACK, ROOK, E4);
     EXPECT_EQ(Bitboard(), bb);
-    EXPECT_EQ(' ', bb.square_occupant(E4));
-    EXPECT_EQ(' ', bb.square_occupant(D4));
+    EXPECT_EQ(' ', bb.square_representation(E4));
+    EXPECT_EQ(' ', bb.square_representation(D4));
     EXPECT_TRUE(bb.square_empty(D4));
     EXPECT_TRUE(bb.square_empty(E4));
 }
