@@ -67,11 +67,11 @@ public:
     };
 
     Iterator begin() const {
-        return Iterator(0ull, mask, false);
+        return Iterator(0ul, mask, false);
     }
 
     Iterator end() const {
-        return Iterator(0ull, mask, true);
+        return Iterator(0ul, mask, true);
     }
 private:
     const std::uint64_t mask;

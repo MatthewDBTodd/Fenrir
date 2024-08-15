@@ -58,7 +58,7 @@ public:
     }
 
     Iterator end() const {
-        return Iterator(0ull);
+        return Iterator(0ul);
     }
 private:
     const std::uint64_t mask;

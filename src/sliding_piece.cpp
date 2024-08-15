@@ -176,7 +176,7 @@ Magic Magic::init(const Square square, const Piece piece) {
                 continue;
             } else {
                 // collision, try again :(
-                std::fill(attacks.begin(), attacks.end(), 0ull);
+                std::fill(attacks.begin(), attacks.end(), 0ul);
                 failed = true;
                 break;
             }
