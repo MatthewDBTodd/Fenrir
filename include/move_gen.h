@@ -31,12 +31,6 @@ enum class MoveType : std::uint8_t {
     MOVE_PROMOTION, CAPTURE_PROMOTION,
     NUM_MOVE_TYPES
 };
-// enum class MoveType {
-//     QUIET, DOUBLE_PAWN_PUSH, CASTLE_KINGSIDE, CASTLE_QUEENSIDE, EN_PASSANT, CAPTURE,
-//     KNIGHT_PROM, BISHOP_PROM, ROOK_PROM, QUEEN_PROM, KNIGHT_CAP_PROM, BISHOP_CAP_PROM,
-//     ROOK_CAP_PROM, QUEEN_CAP_PROM,
-//     NUM_MOVE_TYPES
-// };
 
 class Bitboard;
 
@@ -56,15 +50,20 @@ struct KingInfo {
 
 KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
 
+// While the above function calculates all checking pieces, along with danger/intervention squares
+// sometimes we just want to know as efficiently as possible whether the king in check, e.g. for 
+// legality of en-passant moves
+bool king_in_check(const Bitboard &bb, const AttackTable &at, const Colour colour);
+
 class MoveGen {
 public:
-    MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
+    MoveGen(std::vector<EncodedMove> &moves, Bitboard &bb, const AttackTable &at,
             const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant);
 
     // Made rvalue to prevent mistakes with the object outliving its reference members
     void gen() &&;
 private:
-    MoveGen(std::vector<EncodedMove> &moves, const Bitboard &bb, const AttackTable &at,
+    MoveGen(std::vector<EncodedMove> &moves, Bitboard &bb, const AttackTable &at,
             const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant,
             const KingInfo king_info);
 
@@ -85,7 +84,7 @@ private:
     void castling(const Piece side);
 
     std::vector<EncodedMove> &moves;
-    const Bitboard &bb;
+    Bitboard &bb;
     const AttackTable &at;
     const Colour friendly_colour;
     CastlingRights castling_rights;
@@ -96,33 +95,6 @@ private:
     const std::uint64_t checking_pieces {};
     const std::uint64_t check_intervention_squares {};
 };
-
-// std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour);
-
-// std::uint64_t king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour);
-
-// for a given piece, returns whether it's pinned or not. If it is pinned, it returns 
-// a mask of pieces the piece is legally able to move to, if it's not pinned, an empty mask
-// std::uint64_t pinned(const std::uint64_t piece_pos, const Bitboard &bb, const AttackTable &at,
-//                      const Colour friendly_colour);
-
-
-
-// struct EncodedMove {
-//     const std::uint8_t source_square : 6;
-//     const std::uint8_t dest_square : 6;
-//     const std::uint8_t piece : 3;
-//     const std::uint8_t move_type : 3;
-//     // move metadata
-//     const std::uint8_t piece1 : 3;
-//     const std::uint8_t piece2 : 3;
-//     // const std::uint8_t move_data : 6;
-// };
-
-// enum class MoveType {
-//     QUIET, CAPTURE, DOUBLE_PAWN_PUSH, CASTLE_KINGSIDE, CASTLE_QUEENSIDE, EN_PASSANT, 
-//     MOVE_PROMOTION, CAPTURE_PROMOTION
-// };
 
 namespace move_type_v {
 
@@ -231,9 +203,9 @@ bool operator!=(const CastleQueenSide &l, const CastleQueenSide &r);
 bool operator!=(const EnPassant &l, const EnPassant &r);
 bool operator!=(const MovePromotion &l, const MovePromotion &r);
 bool operator!=(const CapturePromotion &l, const CapturePromotion &r);
+
 } // namespace move_type_v
 
 std::ostream& operator<<(std::ostream& os, const DecodedMove &move);
-// std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves);
 
 #endif // ifndef NDEBUG

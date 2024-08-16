@@ -10,28 +10,6 @@
 #include <exception>
 #include <utility>
 
-// static MoveType promotion(const Piece promotion_piece) {
-//     BOOST_ASSERT(PAWN < promotion_piece && promotion_piece < KING);
-//     switch(promotion_piece) {
-//         case KNIGHT : return MoveType::KNIGHT_PROM;
-//         case BISHOP : return MoveType::BISHOP_PROM;
-//         case ROOK   : return MoveType::ROOK_PROM;
-//         case QUEEN  : return MoveType::QUEEN_PROM;
-//         default     : return MoveType::NUM_MOVE_TYPES; // should not happen
-//     }
-// }
-// 
-// static MoveType capture_promotion(const Piece promotion_piece) {
-//     BOOST_ASSERT(PAWN < promotion_piece && promotion_piece < KING);
-//     switch(promotion_piece) {
-//         case KNIGHT : return MoveType::KNIGHT_CAP_PROM;
-//         case BISHOP : return MoveType::BISHOP_CAP_PROM;
-//         case ROOK   : return MoveType::ROOK_CAP_PROM;
-//         case QUEEN  : return MoveType::QUEEN_CAP_PROM;
-//         default     : return MoveType::NUM_MOVE_TYPES; // should not happen
-//     }
-// }
-
 static bool is_promotion(const std::uint64_t targets) {
     static constexpr std::uint64_t PROMOTION_RANKS {
         (1ul << A1) | (1ul << B1) | (1ul << C1) | (1ul << D1) |
@@ -44,7 +22,7 @@ static bool is_promotion(const std::uint64_t targets) {
 }
 
 MoveGen::MoveGen(std::vector<EncodedMove> &moves, 
-                 const Bitboard &bb, 
+                 Bitboard &bb, 
                  const AttackTable &at,
                  const Colour friendly_colour, 
                  CastlingRights castling, 
@@ -54,7 +32,7 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
 {}
 
 MoveGen::MoveGen(std::vector<EncodedMove> &moves, 
-                 const Bitboard &bb, 
+                 Bitboard &bb, 
                  const AttackTable &at,
                  const Colour friendly_colour, 
                  CastlingRights castling, 
@@ -105,12 +83,30 @@ static bool in_line_with_king(const std::uint64_t source, const std::uint64_t de
     return direction::SOURCE_DEST_MASKS[from_mask(king_pos)][from_mask(source)] & dest;
 }
 
-// TODO - handle en-passant legal check
-// TODO - check king move legal check
 void MoveGen::push_if_legal(
     const MoveType type, const std::uint64_t source, const std::uint64_t dest,
     const Piece piece, const Piece captured_piece, const Piece promoted_piece
 ) {
+    if (type == MoveType::EN_PASSANT) {
+        const EncodedMove encoded_move { 
+            static_cast<std::uint32_t>(type),
+            static_cast<std::uint32_t>(from_mask(source)),
+            static_cast<std::uint32_t>(from_mask(dest)),
+            static_cast<std::uint32_t>(piece),
+            static_cast<std::uint32_t>(friendly_colour),
+            static_cast<std::uint32_t>(captured_piece),
+            static_cast<std::uint32_t>(promoted_piece)
+        };
+        const DecodedMove move { decode(encoded_move) };
+        bb.make_move(move);
+        const bool legal { !king_in_check(bb, at, friendly_colour) };
+        bb.unmake_move(move);
+        if (legal) {
+            moves.push_back(encoded_move);
+        }
+        return;
+    }
+
     if (!(source & pinned) || 
         in_line_with_king(source, dest, bb.colour_piece_mask(friendly_colour, KING))
     ) {
@@ -184,6 +180,11 @@ void MoveGen::king_moves() {
     };
     king_attacks &= ~bb.colour_mask(friendly_colour);
     king_attacks &= ~danger_squares;
+
+    if (king_attacks == 0) {
+        return;
+    }
+
     for (const auto capturable : CAPTURABLE_PIECES) {
         const std::uint64_t captures_of_piece {
             bb.colour_piece_mask(opposite(friendly_colour), capturable) & king_attacks
@@ -399,21 +400,6 @@ void MoveGen::generate_pawn_moves() {
     }
 }
 
-// // TODO - can combine king_attackers and king_danger_squares in a single sweep for efficiency
-// std::uint64_t king_attackers(const Bitboard &bb, const AttackTable &at, const Colour colour) {
-//     const std::uint64_t king_pos { bb.colour_piece_mask(colour, KING) };
-//     const Square king_sq { from_mask(king_pos) };
-//     const Colour enemy_colour { opposite(colour) };
-//     const std::uint64_t occupied { bb.entire_mask() };
-//     const std::uint64_t enemies { bb.colour_mask(enemy_colour) };
-//     std::uint64_t king_attackers {};
-//     for (const Piece piece : ALL_PIECES) {
-//         const std::uint64_t piece_mask { bb.colour_piece_mask(enemy_colour, piece) };
-//         king_attackers |= (piece_mask & at.captures(king_sq, piece, colour, occupied, enemies));
-//     }
-//     return king_attackers;
-// }
-
 KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Colour colour) {
     std::uint64_t king_danger_squares {};
     std::uint64_t king_checking_pieces {};
@@ -484,6 +470,22 @@ KingInfo king_danger_squares(const Bitboard &bb, const AttackTable &at, const Co
         king_checking_pieces,
         check_intervention_squares
     };
+}
+
+bool king_in_check(const Bitboard &bb, const AttackTable &at, const Colour colour) {
+    const Square king_sq { from_mask(bb.colour_piece_mask(colour, KING)) }; 
+    const Colour enemy_colour { opposite(colour) };
+    const std::uint64_t occupied { bb.entire_mask() };
+    const std::uint64_t enemies { bb.colour_mask(enemy_colour) };
+    // using CAPTURABLE_PIECES cos it's in descending order of value, and the most
+    // valuable pieces are probs more likely to check the king? 
+    for (const auto piece_type : CAPTURABLE_PIECES) {
+        const std::uint64_t piece_mask { bb.colour_piece_mask(enemy_colour, piece_type) };
+        if (piece_mask & at.captures(king_sq, piece_type, colour, occupied, enemies)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour) {
@@ -572,13 +574,13 @@ static Square ep_square(const Square dest_square) {
 
 static Square ep_pawn_square(const Square dest_square) {
     static constexpr std::uint64_t white_double_push_squares {
-        (1ul << A4) | (1ul << B4) | (1ul << C4) | (1ul << D4) |
-        (1ul << E4) | (1ul << F4) | (1ul << G4) | (1ul << H4)
+        (1ul << A3) | (1ul << B3) | (1ul << C3) | (1ul << D3) |
+        (1ul << E3) | (1ul << F3) | (1ul << G3) | (1ul << H3)
     };
 
     static constexpr std::uint64_t black_double_push_squares {
-        (1ul << A5) | (1ul << B5) | (1ul << C5) | (1ul << D5) |
-        (1ul << E5) | (1ul << F5) | (1ul << G5) | (1ul << H5)
+        (1ul << A6) | (1ul << B6) | (1ul << C6) | (1ul << D6) |
+        (1ul << E6) | (1ul << F6) | (1ul << G6) | (1ul << H6)
     };
     const std::uint64_t square_mask { from_square(dest_square) };
 
@@ -770,14 +772,5 @@ std::ostream& operator<<(std::ostream& os, const DecodedMove &move) {
     }, move);
     return os;
 }
-
-// std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves) {
-//     os << "[ ";
-//     for (const auto &move : moves) {
-//         os << move << ", ";
-//     }
-//     os << "]";
-//     return os;
-// }
 
 #endif // ifndef NDEBUG

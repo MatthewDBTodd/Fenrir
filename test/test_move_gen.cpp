@@ -60,6 +60,35 @@ TEST_F(TestMoveGen, TestMoveGen) {
         });
         EXPECT_EQ(output, std::vector<DecodedMove>{});
     }
+
+    moves.clear();
+    output.clear();
+    // Test for when en-passant puts oneself in check
+    bb = *Bitboard::from_fen("8/8/8/6K1/k2pP2R/8/8/8");
+    castling = *CastlingRights::from_fen("-");
+    MoveGen(moves, bb, at, BLACK, castling, E3).gen();
+    expected = 6;
+    EXPECT_EQ(expected, moves.size());
+    if (expected != moves.size()) {
+        std::transform(moves.begin(), moves.end(), std::back_inserter(output), [](const auto move) {
+            return decode(move);
+        });
+        EXPECT_EQ(output, std::vector<DecodedMove>{});
+    }
+
+    moves.clear();
+    output.clear();
+    bb = *Bitboard::from_fen("4k1r1/8/8/8/8/8/8/R3K2R");
+    castling = *CastlingRights::from_fen("KQ");
+    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
+    expected = 25;
+    EXPECT_EQ(expected, moves.size());
+    if (expected != moves.size()) {
+        std::transform(moves.begin(), moves.end(), std::back_inserter(output), [](const auto move) {
+            return decode(move);
+        });
+        EXPECT_EQ(output, std::vector<DecodedMove>{});
+    }
 }
 
 TEST_F(TestMoveGen, TestPinnedPieces) {
