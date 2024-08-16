@@ -118,6 +118,7 @@ void MoveGen::push_if_legal(
                            static_cast<std::uint32_t>(from_mask(source)),
                            static_cast<std::uint32_t>(from_mask(dest)),
                            static_cast<std::uint32_t>(piece),
+                           static_cast<std::uint32_t>(friendly_colour),
                            static_cast<std::uint32_t>(captured_piece),
                            static_cast<std::uint32_t>(promoted_piece));
     }
@@ -181,8 +182,8 @@ void MoveGen::king_moves() {
     std::uint64_t king_attacks { 
         at.attacks(king_sq, KING, friendly_colour, blockers) 
     };
-    king_attacks ^= bb.colour_mask(friendly_colour);
-    king_attacks ^= danger_squares;
+    king_attacks &= ~bb.colour_mask(friendly_colour);
+    king_attacks &= ~danger_squares;
     for (const auto capturable : CAPTURABLE_PIECES) {
         const std::uint64_t captures_of_piece {
             bb.colour_piece_mask(opposite(friendly_colour), capturable) & king_attacks
@@ -196,6 +197,7 @@ void MoveGen::king_moves() {
                                static_cast<std::uint32_t>(king_sq),
                                static_cast<std::uint32_t>(from_mask(capture_of_piece)),
                                static_cast<std::uint32_t>(KING),
+                               static_cast<std::uint32_t>(friendly_colour),
                                static_cast<std::uint32_t>(capturable),
                                static_cast<std::uint32_t>(NUM_PIECES));
         }
@@ -206,6 +208,7 @@ void MoveGen::king_moves() {
                            static_cast<std::uint32_t>(king_sq),
                            static_cast<std::uint32_t>(from_mask(quiet_move)),
                            static_cast<std::uint32_t>(KING),
+                           static_cast<std::uint32_t>(friendly_colour),
                            static_cast<std::uint32_t>(NUM_PIECES),
                            static_cast<std::uint32_t>(NUM_PIECES));
     }
@@ -631,6 +634,15 @@ DecodedMove decode(const EncodedMove encoded_move) {
 
 #ifndef NDEBUG
 
+std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
+    os << "{ TYPE: " << move.move_type << " SRC: " << move.source_square << 
+    " DEST: " << move.dest_square << " PIECE: " << move.piece << " COLOUR: " <<
+    move.colour << " CAPTURED_PIECE: " << move.captured_piece << 
+    " PROMOTED_PIECES: " << move.promoted_piece << " }";
+
+    return os;
+}
+
 namespace move_type_v {
 
 std::ostream& operator<<(std::ostream& os, const Common common) {
@@ -680,22 +692,92 @@ std::ostream& operator<<(std::ostream& os, const CapturePromotion cp) {
     return os;
 }
 
+bool operator==(const Common &l, const Common &r) {
+    return l.source == r.source
+        && l.dest == r.dest
+        && l.piece == r.piece
+        && l.colour == r.colour;
+}
+
+bool operator==(const Quiet &l, const Quiet &r) {
+    return l.common == r.common;
+}
+
+bool operator==(const Capture &l, const Capture &r) {
+    return l.common == r.common && l.captured_piece == r.captured_piece;
+}
+
+bool operator==(const DoublePawnPush &l, const DoublePawnPush &r) {
+    return l.common == r.common && l.ep_square == r.ep_square;
+}
+
+bool operator==(const CastleKingSide &l, const CastleKingSide &r) {
+    return l.common == r.common;
+}
+
+bool operator==(const CastleQueenSide &l, const CastleQueenSide &r) {
+    return l.common == r.common;
+}
+
+bool operator==(const EnPassant &l, const EnPassant &r) {
+    return l.common == r.common && l.pawn_square == r.pawn_square;
+}
+
+bool operator==(const MovePromotion &l, const MovePromotion &r) {
+    return l.common == r.common && l.promotion_piece == r.promotion_piece;
+}
+
+bool operator==(const CapturePromotion &l, const CapturePromotion &r) {
+    return l.common == r.common 
+        && l.captured_piece == r.captured_piece
+        && l.promotion_piece == r.promotion_piece;
+}
+
+bool operator!=(const Common &l, const Common &r) {
+    return !(l == r);
+}
+
+bool operator!=(const Quiet &l, const Quiet &r) {
+    return !(l == r);
+}
+bool operator!=(const Capture &l, const Capture &r) {
+    return !(l == r);
+}
+bool operator!=(const DoublePawnPush &l, const DoublePawnPush &r) {
+    return !(l == r);
+}
+bool operator!=(const CastleKingSide &l, const CastleKingSide &r) {
+    return !(l == r);
+}
+bool operator!=(const CastleQueenSide &l, const CastleQueenSide &r) {
+    return !(l == r);
+}
+bool operator!=(const EnPassant &l, const EnPassant &r) {
+    return !(l == r);
+}
+bool operator!=(const MovePromotion &l, const MovePromotion &r) {
+    return !(l == r);
+}
+bool operator!=(const CapturePromotion &l, const CapturePromotion &r) {
+    return !(l == r);
+}
+
 } // namespace move_type_v
 
-std::ostream& operator<<(std::ostream& os, const DecodedMove move) {
+std::ostream& operator<<(std::ostream& os, const DecodedMove &move) {
     std::visit([&os](auto&& variant) {
         os << variant;
     }, move);
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves) {
-    os << "[ ";
-    for (const auto &move : moves) {
-        os << move << ", ";
-    }
-    os << "]";
-    return os;
-}
+// std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves) {
+//     os << "[ ";
+//     for (const auto &move : moves) {
+//         os << move << ", ";
+//     }
+//     os << "]";
+//     return os;
+// }
 
 #endif // ifndef NDEBUG

@@ -12,7 +12,17 @@ std::uint64_t AttackTable::moves(const Square square, const Piece piece, const C
                                  const std::uint64_t blockers) const {
     BOOST_ASSERT(piece != NUM_PIECES);
     switch (piece) {
-        case PAWN: return pawn.moves(colour, square) & ~blockers;
+        case PAWN: {
+            const auto mask { from_square(square) };
+            // preventing double pawn pushes bunny hopping over a piece right in front
+            // of the pawn. This can be improved
+            if (colour == WHITE && (direction::north(mask) & blockers)) {
+                return 0ul;
+            } else if (colour == BLACK && (direction::south(mask) & blockers)) {
+                return 0ul;
+            }
+            return pawn.moves(colour, square) & ~blockers;
+        }
         case KNIGHT: return knight[square] & ~blockers;
         case BISHOP:
         case ROOK: return sliding_piece.lookup(square, piece, blockers) & ~blockers;

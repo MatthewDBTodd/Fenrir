@@ -35,18 +35,31 @@ TEST_F(TestMoveGen, TestMoveGen) {
     std::vector<EncodedMove> moves;
     std::vector<DecodedMove> output;
     MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
-    std::transform(moves.begin(), moves.end(), std::back_inserter(output), [](const auto move) {
-        return decode(move);
-    });
 
-    EXPECT_EQ(20, moves.size()); // << output;
+    std::size_t expected { 20 };
+    EXPECT_EQ(20, moves.size()); // << "Moves: " << output;
+    // Hack so I can print out the output if the test fails, not sure why gtest isn't finding
+    // the output operator when the test fails, will look into this when I can be bothered
+    if (expected != moves.size()) {
+        std::transform(moves.begin(), moves.end(), std::back_inserter(output), [](const auto move) {
+            return decode(move);
+        });
+        EXPECT_EQ(output, std::vector<DecodedMove>{});
+    }
 
     moves.clear();
     output.clear();
     bb = *Bitboard::from_fen("8/8/8/3k4/8/3p4/3P4/3K4");
     castling = *CastlingRights::from_fen("-");
     MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
-    EXPECT_EQ(2, moves.size());
+    expected = 2;
+    EXPECT_EQ(expected, moves.size());
+    if (expected != moves.size()) {
+        std::transform(moves.begin(), moves.end(), std::back_inserter(output), [](const auto move) {
+            return decode(move);
+        });
+        EXPECT_EQ(output, std::vector<DecodedMove>{});
+    }
 }
 
 TEST_F(TestMoveGen, TestPinnedPieces) {

@@ -198,6 +198,8 @@ using MoveAction = std::variant<
 DecodedMove decode(const EncodedMove encoded_move);
 
 #ifndef NDEBUG
+
+std::ostream& operator<<(std::ostream& os, const EncodedMove move);
 namespace move_type_v {
 
 std::ostream& operator<<(std::ostream& os, const Common common);
@@ -210,9 +212,28 @@ std::ostream& operator<<(std::ostream& os, const EnPassant ep);
 std::ostream& operator<<(std::ostream& os, const MovePromotion mp);
 std::ostream& operator<<(std::ostream& os, const CapturePromotion cp);
 
+bool operator==(const Common &l, const Common &r);
+bool operator==(const Quiet &l, const Quiet &r);
+bool operator==(const Capture &l, const Capture &r);
+bool operator==(const DoublePawnPush &l, const DoublePawnPush &r);
+bool operator==(const CastleKingSide &l, const CastleKingSide &r);
+bool operator==(const CastleQueenSide &l, const CastleQueenSide &r);
+bool operator==(const EnPassant &l, const EnPassant &r);
+bool operator==(const MovePromotion &l, const MovePromotion &r);
+bool operator==(const CapturePromotion &l, const CapturePromotion &r);
+
+bool operator!=(const Common &l, const Common &r);
+bool operator!=(const Quiet &l, const Quiet &r);
+bool operator!=(const Capture &l, const Capture &r);
+bool operator!=(const DoublePawnPush &l, const DoublePawnPush &r);
+bool operator!=(const CastleKingSide &l, const CastleKingSide &r);
+bool operator!=(const CastleQueenSide &l, const CastleQueenSide &r);
+bool operator!=(const EnPassant &l, const EnPassant &r);
+bool operator!=(const MovePromotion &l, const MovePromotion &r);
+bool operator!=(const CapturePromotion &l, const CapturePromotion &r);
 } // namespace move_type_v
 
-std::ostream& operator<<(std::ostream& os, const DecodedMove move);
-std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves);
+std::ostream& operator<<(std::ostream& os, const DecodedMove &move);
+// std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves);
 
 #endif // ifndef NDEBUG
