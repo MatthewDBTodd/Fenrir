@@ -1,6 +1,6 @@
 #include "attack_table.h"
 
-#include <cassert>
+#include "assert.h"
 
 std::uint64_t AttackTable::captures(const Square square, const Piece piece, const Colour colour,
                                     const std::uint64_t blockers, const std::uint64_t enemies) const {
@@ -10,7 +10,7 @@ std::uint64_t AttackTable::captures(const Square square, const Piece piece, cons
 // Has to have a separate implementation as pawn quiet moves use different move-sets
 std::uint64_t AttackTable::moves(const Square square, const Piece piece, const Colour colour,
                                  const std::uint64_t blockers) const {
-    assert(piece != NUM_PIECES);
+    BOOST_ASSERT(piece != NUM_PIECES);
     switch (piece) {
         case PAWN: return pawn.moves(colour, square) & ~blockers;
         case KNIGHT: return knight[square] & ~blockers;
@@ -26,7 +26,7 @@ std::uint64_t AttackTable::moves(const Square square, const Piece piece, const C
 
 std::uint64_t AttackTable::attacks(const Square square, const Piece piece, const Colour colour, 
                                    const std::uint64_t blockers) const {
-    assert(piece != NUM_PIECES);
+    BOOST_ASSERT(piece != NUM_PIECES);
     switch (piece) {
         case PAWN: return pawn.attacks(colour, square);
         case KNIGHT: return knight[square];

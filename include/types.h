@@ -2,7 +2,7 @@
 
 #include <array>
 #include <bit>
-#include <cassert>
+#include "assert.h"
 #include <cstdint>
 
 #ifndef NDEBUG
@@ -41,12 +41,12 @@ enum Square : std::uint8_t {
 };
 
 inline constexpr Square from_mask(const std::uint64_t mask) {
-    assert(std::popcount(mask) == 1);
+    BOOST_ASSERT(std::popcount(mask) == 1);
     return static_cast<Square>(std::countr_zero(mask));
 }
 
 inline constexpr std::uint64_t from_square(const Square square) {
-    assert(square != NUM_SQUARES);
+    BOOST_ASSERT(square != NUM_SQUARES);
     return (1ul << square);
 }
 

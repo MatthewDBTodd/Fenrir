@@ -2,7 +2,7 @@
 #include "utility.h"
 
 #include <algorithm>
-#include <cassert>
+#include "assert.h"
 #include <cctype>
 #include <iostream>
 #include <iterator>
@@ -92,7 +92,7 @@ std::optional<std::pair<Colour, Piece>> Bitboard::square_occupant(const Square s
         return (mask & n) > 0;
     })};
     const Piece piece { static_cast<Piece>(std::distance(pieces.begin(), res)) };
-    assert(piece < NUM_PIECES);
+    BOOST_ASSERT(piece < NUM_PIECES);
     return std::make_pair(colour, piece);
 }
 

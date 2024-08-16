@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
-#include <cassert>
+#include "assert.h"
 #include <limits>
 #include <random>
 #include <utility>
@@ -150,7 +150,7 @@ std::vector<SquareAttackPermutation> square_attack_permutations(
 }
 
 Magic Magic::init(const Square square, const Piece piece) {
-    assert(piece == ROOK || piece == BISHOP);
+    BOOST_ASSERT(piece == ROOK || piece == BISHOP);
     const std::uint64_t sq_mask { 1ul << square };
     const std::uint64_t raw_block_mask {
         piece == ROOK ? ROOK_MASKS[square] : BISHOP_MASKS[square]
@@ -205,7 +205,7 @@ SlidingPieceAttacks::SlidingPieceAttacks() :
 
 std::uint64_t SlidingPieceAttacks::lookup(const Square square, const Piece piece,
                                           const std::uint64_t blockers) const {
-    assert(piece == BISHOP || piece == ROOK || piece == QUEEN);
+    BOOST_ASSERT(piece == BISHOP || piece == ROOK || piece == QUEEN);
     if (piece == BISHOP) {
         return bishop_attacks[square].get_attacks(blockers);
     } else if (piece == ROOK) {

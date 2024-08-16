@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-#include <cassert>
+#include "assert.h"
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -27,8 +27,8 @@ private:
     {}
 
     static std::uint8_t mask(const Colour colour, const Piece piece) {
-        assert(colour != NUM_COLOURS);
-        assert(piece == KING || piece == QUEEN);
+        BOOST_ASSERT(colour != NUM_COLOURS);
+        BOOST_ASSERT(piece == KING || piece == QUEEN);
         // bit ugly but avoids branches
         return 1 << ((colour * 2) + (piece - QUEEN));
     }

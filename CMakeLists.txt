@@ -17,13 +17,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+find_package(Boost REQUIRED COMPONENTS stacktrace_basic)
+
 include_directories(include)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -fsanitize=address,undefined")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O0 -g -fsanitize=address,undefined -DBOOST_STACKTRACE_USE_BACKTRACE -DBOOST_ENABLE_ASSERT_DEBUG_HANDLER")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
 
@@ -33,7 +35,7 @@ list(REMOVE_ITEM LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 add_library(fenrir_lib ${LIB_SOURCES})
 
 add_executable(fenrir "src/main.cpp")
-target_link_libraries(fenrir fenrir_lib)
+target_link_libraries(fenrir PRIVATE fenrir_lib Boost::stacktrace_basic dl backtrace)
 
 # set(CMAKE_CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--suppress=missingIncludeSystem;")
 # add_executable(fenrir ${SOURCES})
