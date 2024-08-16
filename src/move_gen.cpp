@@ -628,3 +628,74 @@ DecodedMove decode(const EncodedMove encoded_move) {
             throw std::invalid_argument("Unrecognised move type"); // should never happen
     }
 }
+
+#ifndef NDEBUG
+
+namespace move_type_v {
+
+std::ostream& operator<<(std::ostream& os, const Common common) {
+    os << "SOURCE: " << common.source << " DEST: " << common.dest << " PIECE: " <<
+    common.piece << " COLOUR: " << common.colour << " ";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Quiet quiet) {
+    os << "{ QUIET MOVE :: " << quiet.common << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Capture cap) {
+    os << "{ CAPTURE :: " << cap.common << "CAPTURED_PIECE: " << cap.captured_piece << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const DoublePawnPush dpp) {
+    os << "{ DOUBLE PAWN PUSH :: " << dpp.common << "EP_SQUARE: " << dpp.ep_square << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const CastleKingSide cks) {
+    os << "{ CASTLE KING SIDE :: " << cks.common << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const CastleQueenSide cqs) {
+    os << "{ CASTLE QUEEN SIDE :: " << cqs.common << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const EnPassant ep) {
+    os << "{ EN-PASSANT :: " << ep.common << " PAWN_SQUARE: " << ep.pawn_square << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const MovePromotion mp) {
+    os << "{ MOVE PROMOTION :: " << mp.common << " PROMOTION_PIECE: " << mp.promotion_piece << " }";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const CapturePromotion cp) {
+    os << "{ CAPTURE PROMOTION :: " << cp.common << " CAPTURED_PIECE: " << cp.captured_piece <<
+    " PROMOTION_PIECE: " << cp.promotion_piece << " }";
+    return os;
+}
+
+} // namespace move_type_v
+
+std::ostream& operator<<(std::ostream& os, const DecodedMove move) {
+    std::visit([&os](auto&& variant) {
+        os << variant;
+    }, move);
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves) {
+    os << "[ ";
+    for (const auto &move : moves) {
+        os << move << ", ";
+    }
+    os << "]";
+    return os;
+}
+
+#endif // ifndef NDEBUG

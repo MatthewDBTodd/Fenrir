@@ -5,6 +5,10 @@
 #include <cassert>
 #include <cstdint>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 enum Colour : std::uint8_t {
     WHITE,
     BLACK,
@@ -73,3 +77,38 @@ static constexpr std::array<Piece, 5> NON_KING_PIECES {
 inline constexpr Colour opposite(const Colour colour) {
     return static_cast<Colour>((colour + 1) % NUM_COLOURS);
 }
+
+#ifndef NDEBUG
+
+inline std::ostream& operator<<(std::ostream& os, const Colour colour) {
+    if (colour == WHITE) {
+        os << "White";
+    } else if (colour == BLACK) {
+        os << "Black";
+    } else {
+        os << "Unknown colour";
+    }
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Square square) {
+    const char file = 'A' + square % 8;
+    const char rank = '1' + square / 8;
+    os << file << rank;
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Piece piece) {
+    switch (piece) {
+        case PAWN: os << "Pawn"; break;
+        case KNIGHT: os << "Knight"; break;
+        case BISHOP: os << "Bishop"; break;
+        case ROOK: os << "Rook"; break;
+        case QUEEN: os << "Queen"; break;
+        case KING: os << "King"; break;
+        default: os << "Unknown piece"; break;
+    }
+    return os;
+}
+
+#endif // ifndef NDEBUG

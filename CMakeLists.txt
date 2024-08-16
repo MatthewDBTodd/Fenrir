@@ -23,7 +23,7 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O3 -g -fsanitize=address,undefined")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -fsanitize=address,undefined")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
 

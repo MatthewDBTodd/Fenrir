@@ -12,6 +12,10 @@
 #include <variant>
 #include <vector>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 struct EncodedMove {
     std::uint32_t move_type : 3;
     std::uint32_t source_square : 6;
@@ -193,3 +197,22 @@ using MoveAction = std::variant<
 
 DecodedMove decode(const EncodedMove encoded_move);
 
+#ifndef NDEBUG
+namespace move_type_v {
+
+std::ostream& operator<<(std::ostream& os, const Common common);
+std::ostream& operator<<(std::ostream& os, const Quiet quiet);
+std::ostream& operator<<(std::ostream& os, const Capture cap);
+std::ostream& operator<<(std::ostream& os, const DoublePawnPush dpp);
+std::ostream& operator<<(std::ostream& os, const CastleKingSide cks);
+std::ostream& operator<<(std::ostream& os, const CastleQueenSide cqs);
+std::ostream& operator<<(std::ostream& os, const EnPassant ep);
+std::ostream& operator<<(std::ostream& os, const MovePromotion mp);
+std::ostream& operator<<(std::ostream& os, const CapturePromotion cp);
+
+} // namespace move_type_v
+
+std::ostream& operator<<(std::ostream& os, const DecodedMove move);
+std::ostream& operator<<(std::ostream& os, const std::vector<DecodedMove> &moves);
+
+#endif // ifndef NDEBUG
