@@ -1,6 +1,6 @@
 #pragma once
 
-#include "move_gen.h"
+#include "decoded_move.h"
 #include "types.h"
 
 #include <array>
