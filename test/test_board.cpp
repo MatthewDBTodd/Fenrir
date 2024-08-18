@@ -116,4 +116,3 @@ TEST(TestBoard, TestBoardFromFen) {
     board = Board::from_fen(fen);
     EXPECT_FALSE(board.has_value());
 }
-

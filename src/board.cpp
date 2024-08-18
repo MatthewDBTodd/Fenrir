@@ -34,6 +34,8 @@ void Board::make_move(const DecodedMove &move) {
 
     std::visit(*this, move);
 
+    castling.update_castling(move);
+
     // full move count gets incremented after blacks turn
     fullmove_count += turn_colour;
 
@@ -63,7 +65,7 @@ void Board::operator()(const move_type_v::Quiet &quiet) {
     }
 }
 
-void Board::operator()(const move_type_v::Capture &cap) {
+void Board::operator()(const move_type_v::Capture &) {
     quiet_half_moves = 0;
 }
 
@@ -72,27 +74,23 @@ void Board::operator()(const move_type_v::DoublePawnPush &dpp) {
     en_passant = dpp.ep_square;
 }
 
-void Board::operator()(const move_type_v::CastleKingSide &cks) {
+void Board::operator()(const move_type_v::CastleKingSide &) {
     quiet_half_moves += 1;
-    castling.invalidate(cks.common.colour, KING);
-    castling.invalidate(cks.common.colour, QUEEN);
 }
 
-void Board::operator()(const move_type_v::CastleQueenSide &cqs) {
+void Board::operator()(const move_type_v::CastleQueenSide &) {
     quiet_half_moves += 1;
-    castling.invalidate(cks.common.colour, KING);
-    castling.invalidate(cks.common.colour, QUEEN);
 }
 
-void Board::operator()(const move_type_v::EnPassant &ep) {
+void Board::operator()(const move_type_v::EnPassant &) {
     quiet_half_moves = 0;
 }
 
-void Board::operator()(const move_type_v::MovePromotion &mp) {
+void Board::operator()(const move_type_v::MovePromotion &) {
     quiet_half_moves = 0;
 }
 
-void Board::operator()(const move_type_v::CapturePromotion &cp) {
+void Board::operator()(const move_type_v::CapturePromotion &) {
     quiet_half_moves = 0;
 }
 
