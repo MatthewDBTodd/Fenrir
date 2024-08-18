@@ -50,7 +50,7 @@ public:
 private:
     MoveGen(std::vector<EncodedMove> &moves, Bitboard &bb, const AttackTable &at,
             const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant,
-            const KingInfo king_info);
+            const KingInfo &king_info);
 
     void push_if_legal(const MoveType type, const std::uint64_t source, const std::uint64_t dest, 
                        const Piece piece, const Piece captured_piece, const Piece promoted_piece);
@@ -80,9 +80,3 @@ private:
     const std::uint64_t checking_pieces {};
     const std::uint64_t check_intervention_squares {};
 };
-
-#ifndef NDEBUG
-
-std::ostream& operator<<(std::ostream& os, const EncodedMove move);
-
-#endif

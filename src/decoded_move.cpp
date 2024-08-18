@@ -91,59 +91,50 @@ DecodedMove decode(const EncodedMove encoded_move) {
 
 #ifndef NDEBUG
 
-std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
-    os << "{ TYPE: " << move.move_type << " SRC: " << move.source_square << 
-    " DEST: " << move.dest_square << " PIECE: " << move.piece << " COLOUR: " <<
-    move.colour << " CAPTURED_PIECE: " << move.captured_piece << 
-    " PROMOTED_PIECES: " << move.promoted_piece << " }";
-
-    return os;
-}
-
 namespace move_type_v {
 
-std::ostream& operator<<(std::ostream& os, const Common common) {
+std::ostream& operator<<(std::ostream& os, const Common &common) {
     os << "SOURCE: " << common.source << " DEST: " << common.dest << " PIECE: " <<
     common.piece << " COLOUR: " << common.colour << " ";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const Quiet quiet) {
+std::ostream& operator<<(std::ostream& os, const Quiet &quiet) {
     os << "{ QUIET MOVE :: " << quiet.common << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const Capture cap) {
+std::ostream& operator<<(std::ostream& os, const Capture &cap) {
     os << "{ CAPTURE :: " << cap.common << "CAPTURED_PIECE: " << cap.captured_piece << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const DoublePawnPush dpp) {
+std::ostream& operator<<(std::ostream& os, const DoublePawnPush &dpp) {
     os << "{ DOUBLE PAWN PUSH :: " << dpp.common << "EP_SQUARE: " << dpp.ep_square << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const CastleKingSide cks) {
+std::ostream& operator<<(std::ostream& os, const CastleKingSide &cks) {
     os << "{ CASTLE KING SIDE :: " << cks.common << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const CastleQueenSide cqs) {
+std::ostream& operator<<(std::ostream& os, const CastleQueenSide &cqs) {
     os << "{ CASTLE QUEEN SIDE :: " << cqs.common << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const EnPassant ep) {
+std::ostream& operator<<(std::ostream& os, const EnPassant &ep) {
     os << "{ EN-PASSANT :: " << ep.common << " PAWN_SQUARE: " << ep.pawn_square << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const MovePromotion mp) {
+std::ostream& operator<<(std::ostream& os, const MovePromotion &mp) {
     os << "{ MOVE PROMOTION :: " << mp.common << " PROMOTION_PIECE: " << mp.promotion_piece << " }";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const CapturePromotion cp) {
+std::ostream& operator<<(std::ostream& os, const CapturePromotion &cp) {
     os << "{ CAPTURE PROMOTION :: " << cp.common << " CAPTURED_PIECE: " << cp.captured_piece <<
     " PROMOTION_PIECE: " << cp.promotion_piece << " }";
     return os;

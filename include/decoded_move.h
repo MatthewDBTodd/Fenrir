@@ -87,15 +87,15 @@ DecodedMove decode(const EncodedMove encoded_move);
 
 namespace move_type_v {
 
-std::ostream& operator<<(std::ostream& os, const Common common);
-std::ostream& operator<<(std::ostream& os, const Quiet quiet);
-std::ostream& operator<<(std::ostream& os, const Capture cap);
-std::ostream& operator<<(std::ostream& os, const DoublePawnPush dpp);
-std::ostream& operator<<(std::ostream& os, const CastleKingSide cks);
-std::ostream& operator<<(std::ostream& os, const CastleQueenSide cqs);
-std::ostream& operator<<(std::ostream& os, const EnPassant ep);
-std::ostream& operator<<(std::ostream& os, const MovePromotion mp);
-std::ostream& operator<<(std::ostream& os, const CapturePromotion cp);
+std::ostream& operator<<(std::ostream& os, const Common &common);
+std::ostream& operator<<(std::ostream& os, const Quiet &quiet);
+std::ostream& operator<<(std::ostream& os, const Capture &cap);
+std::ostream& operator<<(std::ostream& os, const DoublePawnPush &dpp);
+std::ostream& operator<<(std::ostream& os, const CastleKingSide &cks);
+std::ostream& operator<<(std::ostream& os, const CastleQueenSide &cqs);
+std::ostream& operator<<(std::ostream& os, const EnPassant &ep);
+std::ostream& operator<<(std::ostream& os, const MovePromotion &mp);
+std::ostream& operator<<(std::ostream& os, const CapturePromotion &cp);
 
 bool operator==(const Common &l, const Common &r);
 bool operator==(const Quiet &l, const Quiet &r);

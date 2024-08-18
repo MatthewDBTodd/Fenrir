@@ -8,6 +8,7 @@
 #include "assert.h"
 #include <cmath>
 #include <exception>
+#include <numeric>
 #include <utility>
 
 static bool is_promotion(const std::uint64_t targets) {
@@ -37,7 +38,7 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
                  const Colour friendly_colour, 
                  CastlingRights castling, 
                  std::optional<Square> en_passant,
-                 const KingInfo king_info) :
+                 const KingInfo &king_info) :
         moves(moves),
         bb(bb),
         at(at),
@@ -186,34 +187,39 @@ void MoveGen::king_moves() {
         return;
     }
 
+    EncodedMove template_move {
+        static_cast<std::uint32_t>(MoveType::CAPTURE),
+        static_cast<std::uint32_t>(king_sq),
+        0u, // dest square, to be filled in
+        static_cast<std::uint32_t>(KING),
+        static_cast<std::uint32_t>(friendly_colour),
+        0u, // captured piece, to be filled in 
+        static_cast<std::uint32_t>(NUM_PIECES)
+    };
+
     for (const auto capturable : CAPTURABLE_PIECES) {
+        template_move.captured_piece = static_cast<std::uint32_t>(capturable);
         const std::uint64_t captures_of_piece {
             bb.colour_piece_mask(opposite(friendly_colour), capturable) & king_attacks
         };
         king_attacks ^= captures_of_piece;
-        for (const auto capture_of_piece : SetBits(captures_of_piece)) {
-            // don't need to do legal check as we've already covered king danger
-            // squares, and the other legal checks (pins/en-passant) don't apply 
-            // to the king
-            moves.emplace_back(static_cast<std::uint32_t>(MoveType::CAPTURE),
-                               static_cast<std::uint32_t>(king_sq),
-                               static_cast<std::uint32_t>(from_mask(capture_of_piece)),
-                               static_cast<std::uint32_t>(KING),
-                               static_cast<std::uint32_t>(friendly_colour),
-                               static_cast<std::uint32_t>(capturable),
-                               static_cast<std::uint32_t>(NUM_PIECES));
-        }
+        auto set_bits { SetBits(captures_of_piece) };
+        std::transform(set_bits.begin(), set_bits.end(), std::back_inserter(moves), 
+                       [=](const auto capture_of_piece) mutable {
+            template_move.dest_square = static_cast<std::uint32_t>(from_mask(capture_of_piece));
+            return template_move;
+        });
     }
+
     // all remaining moves are quiet moves
-    for (const auto quiet_move : SetBits(king_attacks)) {
-        moves.emplace_back(static_cast<std::uint32_t>(MoveType::QUIET),
-                           static_cast<std::uint32_t>(king_sq),
-                           static_cast<std::uint32_t>(from_mask(quiet_move)),
-                           static_cast<std::uint32_t>(KING),
-                           static_cast<std::uint32_t>(friendly_colour),
-                           static_cast<std::uint32_t>(NUM_PIECES),
-                           static_cast<std::uint32_t>(NUM_PIECES));
-    }
+    template_move.move_type = static_cast<std::uint32_t>(MoveType::QUIET);
+    template_move.captured_piece = static_cast<std::uint32_t>(NUM_PIECES);
+    auto set_bits { SetBits(king_attacks) };
+    std::transform(set_bits.begin(), set_bits.end(), std::back_inserter(moves),
+                   [=](const auto quiet_move) mutable {
+        template_move.dest_square = static_cast<std::uint32_t>(from_mask(quiet_move));
+        return template_move;
+    });
 }
 
 // We invalidate castling if the king/rook ever moves, so all we need to check is
@@ -480,13 +486,11 @@ bool king_in_check(const Bitboard &bb, const AttackTable &at, const Colour colou
     const std::uint64_t enemies { bb.colour_mask(enemy_colour) };
     // using CAPTURABLE_PIECES cos it's in descending order of value, and the most
     // valuable pieces are probs more likely to check the king? 
-    for (const auto piece_type : CAPTURABLE_PIECES) {
+    return std::any_of(CAPTURABLE_PIECES.begin(), CAPTURABLE_PIECES.end(), 
+                       [=, &at, &bb](const auto piece_type) {
         const std::uint64_t piece_mask { bb.colour_piece_mask(enemy_colour, piece_type) };
-        if (piece_mask & at.captures(king_sq, piece_type, colour, occupied, enemies)) {
-            return true;
-        }
-    }
-    return false;
+        return (piece_mask & at.captures(king_sq, piece_type, colour, occupied, enemies));
+    });
 }
 
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour) {

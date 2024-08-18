@@ -22,7 +22,7 @@ public:
     }
 
 private:
-    CastlingRights(const std::uint8_t mask) :
+    explicit CastlingRights(const std::uint8_t mask) :
         castling(mask)
     {}
 

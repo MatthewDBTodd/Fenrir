@@ -83,7 +83,7 @@ std::optional<std::pair<Colour, Piece>> Bitboard::square_occupant(const Square s
         return std::nullopt;
     }
 
-    const Colour colour { mask & colour_mask(WHITE) ? WHITE : BLACK };
+    const Colour colour { (mask & colour_mask(WHITE)) ? WHITE : BLACK };
 
     // If this ends up being suboptimal I can optimise by storing an array of indexes
     // to the piece/colours array 

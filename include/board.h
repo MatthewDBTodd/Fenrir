@@ -2,45 +2,55 @@
 
 #include "bitboard.h"
 #include "castling.h"
+#include "decoded_move.h"
 
 #include <cstdint>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 struct SavedMove {
-    std::uint32_t source_sq : 6;
-    std::uint32_t dest_sq : 6;
-    std::uint32_t move_type : 4;
-    std::uint32_t prev_castling : 4;
-    std::uint32_t prev_quiet_moves : 6;
-    // We use A1 to denote no en-passant square as A1 EP is impossible
-    std::uint32_t prev_en_passant : 6; 
+    const DecodedMove move;
+    // from before the move was made
+    const CastlingRights prev_castling;
+    const std::uint16_t prev_quiet_half_moves;
+    const std::optional<Square> prev_en_passant;
 };
 
 class Board {
+public:
+    static std::optional<Board> from_fen(std::string_view fen);
+
+    void make_move(const DecodedMove &move);
+    void undo_last_move();
+
+    void operator()(const move_type_v::Quiet &quiet);
+    void operator()(const move_type_v::Capture &cap);
+    void operator()(const move_type_v::DoublePawnPush &dpp);
+    void operator()(const move_type_v::CastleKingSide &cks);
+    void operator()(const move_type_v::CastleQueenSide &cqs);
+    void operator()(const move_type_v::EnPassant &ep);
+    void operator()(const move_type_v::MovePromotion &mp);
+    void operator()(const move_type_v::CapturePromotion &cp);
+
+#ifndef FENRIR_TEST
 private:
+#endif
+
+    Board(const Bitboard &bb, const std::uint16_t fullmove_count, 
+          const std::uint16_t quiet_half_moves, const Colour turn_colour,
+          const CastlingRights castling, const std::optional<Square> en_passant);
+
     Bitboard bitboard; // 64 
-    std::uint16_t total_half_moves {}; // half moves since the start of the game
+    // Starts at 1 and increments after blacks move. Apparently the most moves in a game
+    // of chess ever was 269 so best not to risk using a uint8_t
+    std::uint16_t fullmove_count {}; 
     std::uint8_t quiet_half_moves {}; // half moves since the last capture/pawn move, max 50
     Colour turn_colour { WHITE };
     CastlingRights castling {};
     std::optional<Square> en_passant {};
-
-    // saved state:
-    // prev quiet half moves : needed for all
-    // prev en passant : needed for all - could just be a single bit flag with the squares stores separately
-    // prev castling : needed for all - could just bit a single bit flag denoting a change with it stored separately
-    // captured piece : not needed for all, store separately
-
     std::vector<SavedMove> prev_moves;
-    // 32 pieces on a board, but kings can't be captured.
-    std::vector<Piece> captures;
 };
-
-void Foo() {
-    const auto sz { sizeof(Board) };
-    const auto sz2 { sizeof(SavedMove) };
-}
 
 /*
  * info needed for a saved move:

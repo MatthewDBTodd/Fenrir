@@ -3,6 +3,7 @@ file(GLOB TEST_SOURCES "*.cpp")
 include(GoogleTest)
 
 add_executable(test_fenrir ${TEST_SOURCES})
+target_compile_definitions(test_fenrir PRIVATE FENRIR_TEST)
 target_link_libraries(test_fenrir PRIVATE GTest::gtest_main fenrir_lib Boost::stacktrace_basic dl backtrace)
 gtest_discover_tests(test_fenrir DISCOVERY_TIMEOUT 600)
 
