@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 #include <iostream>
 #endif
 
@@ -16,7 +16,7 @@ struct EncodedMove {
     std::uint32_t promoted_piece : 3;
 };
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 
 inline std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
     os << "{ TYPE: " << move.move_type << " SRC: " << move.source_square << 

@@ -33,6 +33,11 @@ public:
     void operator()(const move_type_v::MovePromotion &mp);
     void operator()(const move_type_v::CapturePromotion &cp);
 
+    Bitboard& bitboard() { return bitboard_; }
+    Colour turn_colour() const { return turn_colour_; } 
+    CastlingRights castling_rights() const { return castling_; }
+    std::optional<Square> en_passant() const { return en_passant_; }
+
 #ifndef FENRIR_TEST
 private:
 #endif
@@ -41,15 +46,15 @@ private:
           const std::uint16_t quiet_half_moves, const Colour turn_colour,
           const CastlingRights castling, const std::optional<Square> en_passant);
 
-    Bitboard bitboard; // 64 
+    Bitboard bitboard_; // 64 
     // Starts at 1 and increments after blacks move. Apparently the most moves in a game
     // of chess ever was 269 so best not to risk using a uint8_t
-    std::uint16_t fullmove_count {}; 
-    std::uint8_t quiet_half_moves {}; // half moves since the last capture/pawn move, max 50
-    Colour turn_colour { WHITE };
-    CastlingRights castling {};
-    std::optional<Square> en_passant {};
-    std::vector<SavedMove> prev_moves;
+    std::uint16_t fullmove_count_ {}; 
+    std::uint8_t quiet_half_moves_ {}; // half moves since the last capture/pawn move, max 50
+    Colour turn_colour_ { WHITE };
+    CastlingRights castling_ {};
+    std::optional<Square> en_passant_ {};
+    std::vector<SavedMove> prev_moves_;
 };
 
 /*

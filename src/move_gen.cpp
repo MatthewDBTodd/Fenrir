@@ -1,11 +1,13 @@
+#include "attack_table.h"
 #include "bitboard.h"
+#include "board.h"
 #include "masks.h"
 #include "move_gen.h"
 #include "set_bit_iterator.h"
 
 #include <algorithm>
 #include <bit>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <cmath>
 #include <exception>
 #include <numeric>
@@ -23,13 +25,11 @@ static bool is_promotion(const std::uint64_t targets) {
 }
 
 MoveGen::MoveGen(std::vector<EncodedMove> &moves, 
-                 Bitboard &bb, 
-                 const AttackTable &at,
-                 const Colour friendly_colour, 
-                 CastlingRights castling, 
-                 std::optional<Square> en_passant) :
-        MoveGen(moves, bb, at, friendly_colour, castling, en_passant, 
-                king_danger_squares(bb, at, friendly_colour))
+                 Board &board,
+                 const AttackTable &at) :
+        MoveGen(moves, board.bitboard(), at, board.turn_colour(), 
+                board.castling_rights(), board.en_passant(), 
+                king_danger_squares(board.bitboard(), at, board.turn_colour()))
 {}
 
 MoveGen::MoveGen(std::vector<EncodedMove> &moves, 

@@ -2,10 +2,10 @@
 
 #include <array>
 #include <bit>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <cstdint>
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 #include <iostream>
 #endif
 
@@ -42,6 +42,9 @@ enum Square : std::uint8_t {
 
 inline constexpr Square from_mask(const std::uint64_t mask) {
     BOOST_ASSERT(std::popcount(mask) == 1);
+    if (std::popcount(mask) != 1) {
+        __builtin_unreachable();
+    }
     return static_cast<Square>(std::countr_zero(mask));
 }
 
@@ -78,7 +81,7 @@ inline constexpr Colour opposite(const Colour colour) {
     return static_cast<Colour>((colour + 1) % NUM_COLOURS);
 }
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 
 inline std::ostream& operator<<(std::ostream& os, const Colour colour) {
     if (colour == WHITE) {
@@ -111,4 +114,4 @@ inline std::ostream& operator<<(std::ostream& os, const Piece piece) {
     return os;
 }
 
-#endif // ifndef NDEBUG
+#endif // ifdef FENRIR_TEST

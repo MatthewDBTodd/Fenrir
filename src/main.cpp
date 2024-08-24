@@ -4,7 +4,7 @@
 #include "sliding_piece.h"
 
 #include <iostream>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <chrono>
 
 int main() {

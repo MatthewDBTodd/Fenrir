@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <limits>
 #include <random>
 #include <utility>

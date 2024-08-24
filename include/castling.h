@@ -3,7 +3,7 @@
 #include "decoded_move.h"
 #include "types.h"
 
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <cstdint>
 #include <optional>
 #include <string_view>

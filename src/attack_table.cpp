@@ -1,6 +1,6 @@
 #include "attack_table.h"
 
-#include "assert.h"
+#include "fenrir_assert.h"
 
 std::uint64_t AttackTable::captures(const Square square, const Piece piece, const Colour colour,
                                     const std::uint64_t blockers, const std::uint64_t enemies) const {

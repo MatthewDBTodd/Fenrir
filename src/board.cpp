@@ -11,87 +11,87 @@
 Board::Board(const Bitboard &bb, const std::uint16_t fullmove_count,
              const std::uint16_t quiet_half_moves, const Colour turn_colour,
              const CastlingRights castling, const std::optional<Square> en_passant)
-    :   bitboard(bb),
-        fullmove_count(fullmove_count),
-        quiet_half_moves(quiet_half_moves),
-        turn_colour(turn_colour),
-        castling(castling),
-        en_passant(en_passant)
+    :   bitboard_(bb),
+        fullmove_count_(fullmove_count),
+        quiet_half_moves_(quiet_half_moves),
+        turn_colour_(turn_colour),
+        castling_(castling),
+        en_passant_(en_passant)
 {}
 
 void Board::make_move(const DecodedMove &move) {
     // needs to be done before making the move as some of these values will get clobbered
-    prev_moves.emplace_back(SavedMove {
+    prev_moves_.emplace_back(SavedMove {
         move,
-        castling,
-        quiet_half_moves,
-        en_passant
+        castling_,
+        quiet_half_moves_,
+        en_passant_
     });
 
-    bitboard.make_move(move);
+    bitboard_.make_move(move);
 
-    en_passant = std::nullopt;
+    en_passant_ = std::nullopt;
 
     std::visit(*this, move);
 
-    castling.update_castling(move);
+    castling_.update_castling(move);
 
     // full move count gets incremented after blacks turn
-    fullmove_count += turn_colour;
+    fullmove_count_ += turn_colour_;
 
-    turn_colour = opposite(turn_colour);
+    turn_colour_ = opposite(turn_colour_);
 }
 
 void Board::undo_last_move() {
-    BOOST_ASSERT(!prev_moves.empty());
-    const auto &last_move { prev_moves.back() }; 
-    castling = last_move.prev_castling;
-    quiet_half_moves = last_move.prev_quiet_half_moves;
-    en_passant = last_move.prev_en_passant;
+    BOOST_ASSERT(!prev_moves_.empty());
+    const auto &last_move { prev_moves_.back() }; 
+    castling_ = last_move.prev_castling;
+    quiet_half_moves_ = last_move.prev_quiet_half_moves;
+    en_passant_ = last_move.prev_en_passant;
 
-    turn_colour = opposite(turn_colour);
-    fullmove_count -= turn_colour;
+    turn_colour_ = opposite(turn_colour_);
+    fullmove_count_ -= turn_colour_;
 
-    bitboard.unmake_move(last_move.move);
+    bitboard_.unmake_move(last_move.move);
 
-    prev_moves.pop_back();
+    prev_moves_.pop_back();
 }
 
 void Board::operator()(const move_type_v::Quiet &quiet) {
     if (quiet.common.piece != PAWN) {
-        quiet_half_moves += 1;
+        quiet_half_moves_ += 1;
     } else {
-        quiet_half_moves = 0;
+        quiet_half_moves_ = 0;
     }
 }
 
 void Board::operator()(const move_type_v::Capture &) {
-    quiet_half_moves = 0;
+    quiet_half_moves_ = 0;
 }
 
 void Board::operator()(const move_type_v::DoublePawnPush &dpp) {
-    quiet_half_moves = 0;
-    en_passant = dpp.ep_square;
+    quiet_half_moves_ = 0;
+    en_passant_ = dpp.ep_square;
 }
 
 void Board::operator()(const move_type_v::CastleKingSide &) {
-    quiet_half_moves += 1;
+    quiet_half_moves_ += 1;
 }
 
 void Board::operator()(const move_type_v::CastleQueenSide &) {
-    quiet_half_moves += 1;
+    quiet_half_moves_ += 1;
 }
 
 void Board::operator()(const move_type_v::EnPassant &) {
-    quiet_half_moves = 0;
+    quiet_half_moves_ = 0;
 }
 
 void Board::operator()(const move_type_v::MovePromotion &) {
-    quiet_half_moves = 0;
+    quiet_half_moves_ = 0;
 }
 
 void Board::operator()(const move_type_v::CapturePromotion &) {
-    quiet_half_moves = 0;
+    quiet_half_moves_ = 0;
 }
 
 static std::optional<Colour> turn_colour_from_fen(std::string_view fen);
@@ -117,11 +117,11 @@ std::optional<Board> Board::from_fen(std::string_view fen) {
         return std::nullopt;
     }
 
-    const std::optional<Colour> turn_colour { 
+    const std::optional<Colour> turn_colour_ { 
         turn_colour_from_fen(fen_parts[1]) 
     };
 
-    if (!turn_colour.has_value()) {
+    if (!turn_colour_.has_value()) {
         return std::nullopt;
     }
 
@@ -139,7 +139,7 @@ std::optional<Board> Board::from_fen(std::string_view fen) {
         return std::nullopt;
     }
 
-    const std::optional<Square> en_passant {
+    const std::optional<Square> en_passant_ {
         *std::get_if<std::optional<Square>>(&en_passant_result)
     };
 
@@ -159,8 +159,8 @@ std::optional<Board> Board::from_fen(std::string_view fen) {
         return std::nullopt;
     }
 
-    return Board(*bb, *fullmove_count, *quiet_half_moves, *turn_colour, 
-                 *castling, en_passant);
+    return Board(*bb, *fullmove_count, *quiet_half_moves, *turn_colour_, 
+                 *castling, en_passant_);
 }
 
 static std::optional<Colour> turn_colour_from_fen(std::string_view fen) {

@@ -2,8 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "attack_table.h"
-#include "bitboard.h"
-#include "castling.h"
+#include "board.h"
 #include "move_gen.h"
 #include "test_helpers.h"
 #include "types.h"
@@ -16,11 +15,10 @@ protected:
 const AttackTable TestMoveGen::at {};
 
 TEST_F(TestMoveGen, TestMoveGen) {
-    Bitboard bb { *Bitboard::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") };
-    CastlingRights castling { *CastlingRights::from_fen("KQkq") };
+    Board b { *Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") };
     std::vector<EncodedMove> moves;
     std::vector<DecodedMove> output;
-    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
+    MoveGen(moves, b, at).gen();
 
     std::size_t expected { 20 };
     EXPECT_EQ(20, moves.size()); // << "Moves: " << output;
@@ -35,9 +33,8 @@ TEST_F(TestMoveGen, TestMoveGen) {
 
     moves.clear();
     output.clear();
-    bb = *Bitboard::from_fen("8/8/8/3k4/8/3p4/3P4/3K4");
-    castling = *CastlingRights::from_fen("-");
-    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
+    b = *Board::from_fen("8/8/8/3k4/8/3p4/3P4/3K4 w - - 0 70");
+    MoveGen(moves, b, at).gen();
     expected = 2;
     EXPECT_EQ(expected, moves.size());
     if (expected != moves.size()) {
@@ -50,9 +47,8 @@ TEST_F(TestMoveGen, TestMoveGen) {
     moves.clear();
     output.clear();
     // Test for when en-passant puts oneself in check
-    bb = *Bitboard::from_fen("8/8/8/6K1/k2pP2R/8/8/8");
-    castling = *CastlingRights::from_fen("-");
-    MoveGen(moves, bb, at, BLACK, castling, E3).gen();
+    b = *Board::from_fen("8/8/8/6K1/k2pP2R/8/8/8 b - e3 0 50");
+    MoveGen(moves, b, at).gen();
     expected = 6;
     EXPECT_EQ(expected, moves.size());
     if (expected != moves.size()) {
@@ -64,9 +60,8 @@ TEST_F(TestMoveGen, TestMoveGen) {
 
     moves.clear();
     output.clear();
-    bb = *Bitboard::from_fen("4k1r1/8/8/8/8/8/8/R3K2R");
-    castling = *CastlingRights::from_fen("KQ");
-    MoveGen(moves, bb, at, WHITE, castling, std::nullopt).gen();
+    b = *Board::from_fen("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 3 40");
+    MoveGen(moves, b, at).gen();
     expected = 25;
     EXPECT_EQ(expected, moves.size());
     if (expected != moves.size()) {

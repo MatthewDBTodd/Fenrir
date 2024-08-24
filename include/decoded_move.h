@@ -5,7 +5,7 @@
 
 #include <variant>
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 #include <iostream>
 #endif
 
@@ -83,7 +83,7 @@ using MoveAction = std::variant<
 
 DecodedMove decode(const EncodedMove encoded_move);
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 
 namespace move_type_v {
 
@@ -121,4 +121,4 @@ bool operator!=(const CapturePromotion &l, const CapturePromotion &r);
 
 std::ostream& operator<<(std::ostream& os, const DecodedMove &move);
 
-#endif // ifndef NDEBUG
+#endif // ifdef FENRIR_TEST

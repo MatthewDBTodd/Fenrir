@@ -1,6 +1,6 @@
 #pragma once
 
-// #include <cassert>
+#include <cassert>
 #include <stdexcept>
 #include <iostream>
 #include <boost/stacktrace.hpp>

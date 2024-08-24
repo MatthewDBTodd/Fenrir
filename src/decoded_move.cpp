@@ -1,4 +1,4 @@
-#include "assert.h"
+#include "fenrir_assert.h"
 #include "decoded_move.h"
 #include "direction.h"
 #include "move_types.h"
@@ -89,7 +89,7 @@ DecodedMove decode(const EncodedMove encoded_move) {
     }
 }
 
-#ifndef NDEBUG
+#ifdef FENRIR_TEST
 
 namespace move_type_v {
 
@@ -219,4 +219,4 @@ std::ostream& operator<<(std::ostream& os, const DecodedMove &move) {
     return os;
 }
 
-#endif // ifndef NDEBUG
+#endif // ifdef FENRIR_TEST

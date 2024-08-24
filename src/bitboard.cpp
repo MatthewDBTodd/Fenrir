@@ -2,7 +2,7 @@
 #include "utility.h"
 
 #include <algorithm>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <cctype>
 #include <iostream>
 #include <iterator>

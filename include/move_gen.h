@@ -1,23 +1,20 @@
 #pragma once
 
-#include "attack_table.h"
 #include "castling.h"
 #include "encoded_move.h"
 #include "move_types.h"
 #include "types.h"
 
 #include <bit>
-#include "assert.h"
+#include "fenrir_assert.h"
 #include <cstdint>
 #include <optional>
 #include <utility>
 #include <vector>
 
-#ifndef NDEBUG
-#include <iostream>
-#endif
-
+class AttackTable;
 class Bitboard;
+class Board;
 
 // returns a mask of all pinned pieces
 std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Colour colour);
@@ -42,8 +39,7 @@ bool king_in_check(const Bitboard &bb, const AttackTable &at, const Colour colou
 
 class MoveGen {
 public:
-    MoveGen(std::vector<EncodedMove> &moves, Bitboard &bb, const AttackTable &at,
-            const Colour friendly_colour, CastlingRights castling, std::optional<Square> en_passant);
+    MoveGen(std::vector<EncodedMove> &moves, Board &board, const AttackTable &at);
 
     // Made rvalue to prevent mistakes with the object outliving its reference members
     void gen() &&;
