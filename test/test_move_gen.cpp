@@ -15,7 +15,7 @@ protected:
 const AttackTable TestMoveGen::at {};
 
 TEST_F(TestMoveGen, TestMoveGen) {
-    Board b { *Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") };
+    Board b { *Board::init("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") };
     std::vector<EncodedMove> moves;
     std::vector<DecodedMove> output;
     MoveGen(moves, b, at).gen();
@@ -33,7 +33,7 @@ TEST_F(TestMoveGen, TestMoveGen) {
 
     moves.clear();
     output.clear();
-    b = *Board::from_fen("8/8/8/3k4/8/3p4/3P4/3K4 w - - 0 70");
+    b = *Board::init("8/8/8/3k4/8/3p4/3P4/3K4 w - - 0 70");
     MoveGen(moves, b, at).gen();
     expected = 2;
     EXPECT_EQ(expected, moves.size());
@@ -47,7 +47,7 @@ TEST_F(TestMoveGen, TestMoveGen) {
     moves.clear();
     output.clear();
     // Test for when en-passant puts oneself in check
-    b = *Board::from_fen("8/8/8/6K1/k2pP2R/8/8/8 b - e3 0 50");
+    b = *Board::init("8/8/8/6K1/k2pP2R/8/8/8 b - e3 0 50");
     MoveGen(moves, b, at).gen();
     expected = 6;
     EXPECT_EQ(expected, moves.size());
@@ -60,7 +60,7 @@ TEST_F(TestMoveGen, TestMoveGen) {
 
     moves.clear();
     output.clear();
-    b = *Board::from_fen("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 3 40");
+    b = *Board::init("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 3 40");
     MoveGen(moves, b, at).gen();
     expected = 25;
     EXPECT_EQ(expected, moves.size());

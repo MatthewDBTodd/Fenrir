@@ -106,7 +106,7 @@ static EnPassantParseResult en_passant_from_fen(std::string_view fen);
 template <std::integral T>
 static std::optional<T> parse_int(std::string_view fen);
 
-std::optional<Board> Board::from_fen(std::string_view fen) {
+std::optional<Board> Board::init(std::string_view fen) {
     const std::vector<std::string_view> fen_parts { utility::split(fen, ' ') };
     if (fen_parts.size() != 6) {
         return std::nullopt;

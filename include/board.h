@@ -19,7 +19,8 @@ struct SavedMove {
 
 class Board {
 public:
-    static std::optional<Board> from_fen(std::string_view fen);
+    static std::optional<Board> init(
+        std::string_view fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     void make_move(const DecodedMove &move);
     void undo_last_move();
@@ -34,6 +35,7 @@ public:
     void operator()(const move_type_v::CapturePromotion &cp);
 
     Bitboard& bitboard() { return bitboard_; }
+    const Bitboard& bitboard() const { return bitboard_; }
     Colour turn_colour() const { return turn_colour_; } 
     CastlingRights castling_rights() const { return castling_; }
     std::optional<Square> en_passant() const { return en_passant_; }
