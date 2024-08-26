@@ -19,6 +19,10 @@ Board::Board(const Bitboard &bb, const std::uint16_t fullmove_count,
         en_passant_(en_passant)
 {}
 
+void Board::make_move(const EncodedMove move) {
+    return make_move(decode(move));
+}
+
 void Board::make_move(const DecodedMove &move) {
     // needs to be done before making the move as some of these values will get clobbered
     prev_moves_.emplace_back(SavedMove {

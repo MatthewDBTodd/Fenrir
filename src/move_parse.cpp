@@ -35,7 +35,7 @@ static std::optional<Piece> parse_piece_char(char piece) {
     }
 }
 
-std::optional<DecodedMove> parse_move_input(std::string_view input, const Board &board) {
+std::optional<EncodedMove> parse_move_input(std::string_view input, const Board &board) {
     if (input.size() != 4 && input.size() != 5) {
         return std::nullopt;
     }
@@ -55,16 +55,18 @@ std::optional<DecodedMove> parse_move_input(std::string_view input, const Board 
         return std::nullopt;
     }
 
-    const move_type_v::Common common { *source, *dest, occupant->second, occupant->first };
+    // const move_type_v::Common common { *source, *dest, occupant->second, occupant->first };
+    const Colour colour { occupant->first };
+    const Piece piece { occupant->second };
 
     const auto dest_occupant { board.bitboard().square_occupant(*dest) };
 
-    if (dest_occupant.has_value() && dest_occupant->first == common.colour) {
+    if (dest_occupant.has_value() && dest_occupant->first == colour) {
         return std::nullopt;
     }
 
     if (input.size() == 5) {
-        if (common.piece != PAWN) {
+        if (piece != PAWN) {
             return std::nullopt;
         }
         const auto promotion_piece { parse_piece_char(input[4]) };
@@ -73,18 +75,22 @@ std::optional<DecodedMove> parse_move_input(std::string_view input, const Board 
             return std::nullopt;
         }
         if (dest_occupant.has_value()) {
-            return move_type_v::CapturePromotion { common, dest_occupant->second, *promotion_piece };
+            return EncodedMove(MoveType::CAPTURE_PROMOTION, *source, *dest, piece,
+                               colour, dest_occupant->second, *promotion_piece);
+            // return move_type_v::CapturePromotion { common, dest_occupant->second, *promotion_piece };
         } else {
-            return move_type_v::MovePromotion { common, *promotion_piece };
+            return EncodedMove(MoveType::MOVE_PROMOTION, *source, *dest, piece,
+                               colour, NUM_PIECES, *promotion_piece);
+            // return move_type_v::MovePromotion { common, *promotion_piece };
         }
-    } else if (common.piece == PAWN && 
+    } else if (piece == PAWN && 
                board.en_passant().has_value() && 
-               common.dest == *board.en_passant()) {
+               *dest == *board.en_passant()) {
         const std::optional<Square> pawn_square = [=]() -> std::optional<Square> {
-            if (common.dest / 8 == 2) {
-                return static_cast<Square>(common.dest + 8);
-            } else if (common.dest / 8 == 5) {
-                return static_cast<Square>(common.dest - 8);
+            if (*dest / 8 == 2) {
+                return static_cast<Square>(*dest + 8);
+            } else if (*dest / 8 == 5) {
+                return static_cast<Square>(*dest - 8);
             } else {
                 return std::nullopt;
             }
@@ -92,36 +98,83 @@ std::optional<DecodedMove> parse_move_input(std::string_view input, const Board 
         if (!pawn_square.has_value()) {
             return std::nullopt;
         }
-        return move_type_v::EnPassant{ common, *pawn_square };
+        return EncodedMove(MoveType::EN_PASSANT, *source, *dest, piece,
+                           colour, dest_occupant->second, NUM_PIECES);
+        // return move_type_v::EnPassant{ common, *pawn_square };
     } else if (dest_occupant.has_value()) {
-        return move_type_v::Capture{ common, dest_occupant->second };
-    } else if (common.piece == PAWN) {
+        return EncodedMove(MoveType::CAPTURE, *source, *dest, piece,
+                           colour, dest_occupant->second, NUM_PIECES);
+        // return move_type_v::Capture{ common, dest_occupant->second };
+    } else if (piece == PAWN) {
         const auto difference { 
-            std::abs(static_cast<int>(common.dest) - static_cast<int>(common.source)) 
+            std::abs(static_cast<int>(*dest) - static_cast<int>(*source)) 
         };
         if (difference == 8) {
-            return move_type_v::Quiet { common };
+            return EncodedMove(MoveType::QUIET, *source, *dest, piece,
+                               colour, NUM_PIECES, NUM_PIECES);
+            // return move_type_v::Quiet { common };
         } else if (difference == 16) {
-            const Square ep_square = static_cast<Square>(
-                common.colour == WHITE ? common.dest - 8 : common.dest + 8
-            );
-            return move_type_v::DoublePawnPush { common, ep_square };
+            // const Square ep_square = static_cast<Square>(
+            //     colour == WHITE ? *dest - 8 : *dest + 8
+            // );
+            return EncodedMove(MoveType::DOUBLE_PAWN_PUSH, *source, *dest, piece,
+                               colour, NUM_PIECES, NUM_PIECES);
+            // return move_type_v::DoublePawnPush { common, ep_square };
         } else {
             return std::nullopt;
         }
-    } else if (common.piece == KING) {
-        if (common.source == E1 && common.dest == G1) {
-            return move_type_v::CastleKingSide { common };
-        } else if (common.source == E1 && common.dest == C1) {
-            return move_type_v::CastleQueenSide { common };
-        } else if (common.source == E8 && common.dest == G8) {
-            return move_type_v::CastleKingSide { common };
-        } else if (common.source == E8 && common.dest == C8) {
-            return move_type_v::CastleQueenSide { common };
-        } else {
-            return move_type_v::Quiet { common };
-        }
+    } else if (piece == KING) {
+        const auto move_type { [=] {
+            if (*source == E1 && *dest == G1) {
+                return MoveType::CASTLE_KINGSIDE;
+            } else if (*source == E1 && *dest == C1) {
+                return MoveType::CASTLE_QUEENSIDE;
+            } else if (*source == E8 && *dest == G8) {
+                return MoveType::CASTLE_KINGSIDE;
+            } else if (*source == E8 && *dest == C8) {
+                return MoveType::CASTLE_QUEENSIDE;
+            } else {
+                return MoveType::QUIET;
+            }
+        }() };
+        return EncodedMove(move_type, *source, *dest, piece, colour,
+                           NUM_PIECES, NUM_PIECES);
+        // if (common.source == E1 && common.dest == G1) {
+        //     return move_type_v::CastleKingSide { common };
+        // } else if (common.source == E1 && common.dest == C1) {
+        //     return move_type_v::CastleQueenSide { common };
+        // } else if (common.source == E8 && common.dest == G8) {
+        //     return move_type_v::CastleKingSide { common };
+        // } else if (common.source == E8 && common.dest == C8) {
+        //     return move_type_v::CastleQueenSide { common };
+        // } else {
+        //     return move_type_v::Quiet { common };
+        // }
     } else {
-        return move_type_v::Quiet { common };
+        return EncodedMove(MoveType::QUIET, *source, *dest, occupant->second, occupant->first,
+                           NUM_PIECES, NUM_PIECES);
+        // return move_type_v::Quiet { common };
     }
+}
+
+std::string move_to_string(const EncodedMove move) {
+    std::string rv;
+    rv.append(1, 'a' + (move.source_square % 8));
+    rv.append(1, '1' + (move.source_square / 8));
+    rv.append(1, 'a' + (move.dest_square % 8));
+    rv.append(1, '1' + (move.dest_square / 8 ));
+    if (static_cast<MoveType>(move.move_type) == MoveType::MOVE_PROMOTION || 
+        static_cast<MoveType>(move.move_type) == MoveType::CAPTURE_PROMOTION) {
+
+        rv.append(1, [=]{
+            switch (static_cast<Piece>(move.promoted_piece)) {
+                case KNIGHT: return 'N';
+                case BISHOP: return 'B';
+                case ROOK: return 'R';
+                case QUEEN: return 'Q';
+                default: return 'X'; // should not happen but here to make it obvious if it does
+            }
+        }());
+    }
+    return rv;
 }

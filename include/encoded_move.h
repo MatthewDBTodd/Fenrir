@@ -1,5 +1,8 @@
 #pragma once
 
+#include "move_types.h"
+#include "types.h"
+
 #include <cstdint>
 
 #ifdef FENRIR_TEST
@@ -7,6 +10,9 @@
 #endif
 
 struct EncodedMove {
+    EncodedMove(const MoveType move_type, const Square source, const Square dest,
+                const Piece piece, const Colour colour, const Piece captured,
+                const Piece promoted);
     std::uint32_t move_type : 3;
     std::uint32_t source_square : 6;
     std::uint32_t dest_square : 6;
@@ -16,15 +22,11 @@ struct EncodedMove {
     std::uint32_t promoted_piece : 3;
 };
 
+bool operator==(const EncodedMove l, const EncodedMove r);
+bool operator!=(const EncodedMove l, const EncodedMove r);
+
 #ifdef FENRIR_TEST
 
-inline std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
-    os << "{ TYPE: " << move.move_type << " SRC: " << move.source_square << 
-    " DEST: " << move.dest_square << " PIECE: " << move.piece << " COLOUR: " <<
-    move.colour << " CAPTURED_PIECE: " << move.captured_piece << 
-    " PROMOTED_PIECES: " << move.promoted_piece << " }";
-
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, const EncodedMove move);
 
 #endif

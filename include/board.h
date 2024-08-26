@@ -3,6 +3,7 @@
 #include "bitboard.h"
 #include "castling.h"
 #include "decoded_move.h"
+#include "encoded_move.h"
 
 #include <cstdint>
 #include <optional>
@@ -22,6 +23,7 @@ public:
     static std::optional<Board> init(
         std::string_view fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
+    void make_move(const EncodedMove move);
     void make_move(const DecodedMove &move);
     void undo_last_move();
 

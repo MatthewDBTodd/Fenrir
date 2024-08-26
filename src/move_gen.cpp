@@ -52,6 +52,7 @@ MoveGen::MoveGen(std::vector<EncodedMove> &moves,
 {}
 
 void MoveGen::gen() && {
+    moves.clear();
     // If in check by more than 1 piece, the only way to get out of it is to move
     // the king
     if (std::popcount(checking_pieces) > 1) {
@@ -90,15 +91,15 @@ void MoveGen::push_if_legal(
     const Piece piece, const Piece captured_piece, const Piece promoted_piece
 ) {
     if (type == MoveType::EN_PASSANT) {
-        const EncodedMove encoded_move { 
-            static_cast<std::uint32_t>(type),
-            static_cast<std::uint32_t>(from_mask(source)),
-            static_cast<std::uint32_t>(from_mask(dest)),
-            static_cast<std::uint32_t>(piece),
-            static_cast<std::uint32_t>(friendly_colour),
-            static_cast<std::uint32_t>(captured_piece),
-            static_cast<std::uint32_t>(promoted_piece)
-        };
+        const EncodedMove encoded_move( 
+            type,
+            from_mask(source),
+            from_mask(dest),
+            piece,
+            friendly_colour,
+            captured_piece,
+            promoted_piece
+        );
         const DecodedMove move { decode(encoded_move) };
         bb.make_move(move);
         const bool legal { !king_in_check(bb, at, friendly_colour) };
@@ -112,13 +113,13 @@ void MoveGen::push_if_legal(
     if (!(source & pinned) || 
         in_line_with_king(source, dest, bb.colour_piece_mask(friendly_colour, KING))
     ) {
-        moves.emplace_back(static_cast<std::uint32_t>(type),
-                           static_cast<std::uint32_t>(from_mask(source)),
-                           static_cast<std::uint32_t>(from_mask(dest)),
-                           static_cast<std::uint32_t>(piece),
-                           static_cast<std::uint32_t>(friendly_colour),
-                           static_cast<std::uint32_t>(captured_piece),
-                           static_cast<std::uint32_t>(promoted_piece));
+        moves.emplace_back(type,
+                           from_mask(source),
+                           from_mask(dest),
+                           piece,
+                           friendly_colour,
+                           captured_piece,
+                           promoted_piece);
     }
 }
 
@@ -187,15 +188,15 @@ void MoveGen::king_moves() {
         return;
     }
 
-    EncodedMove template_move {
-        static_cast<std::uint32_t>(MoveType::CAPTURE),
-        static_cast<std::uint32_t>(king_sq),
-        0u, // dest square, to be filled in
-        static_cast<std::uint32_t>(KING),
-        static_cast<std::uint32_t>(friendly_colour),
-        0u, // captured piece, to be filled in 
-        static_cast<std::uint32_t>(NUM_PIECES)
-    };
+    EncodedMove template_move(
+        MoveType::CAPTURE,
+        king_sq,
+        NUM_SQUARES, // dest square, to be filled in
+        KING,
+        friendly_colour,
+        NUM_PIECES, // captured piece, to be filled in
+        NUM_PIECES
+    );
 
     for (const auto capturable : CAPTURABLE_PIECES) {
         template_move.captured_piece = static_cast<std::uint32_t>(capturable);
@@ -269,12 +270,13 @@ void MoveGen::castling(const Piece side) {
     //     are the intermediate squares blocked? | are the intermediate squares under attack?
     if ( !(castling_squares & bb.entire_mask() || castling_squares & danger_squares) ) {
         const auto type { side == KING ? MoveType::CASTLE_KINGSIDE : MoveType::CASTLE_QUEENSIDE };
-        moves.emplace_back(static_cast<std::uint32_t>(type),
-                            static_cast<std::uint32_t>(king_sq),
-                            static_cast<std::uint32_t>(dest_sq),
-                            static_cast<std::uint32_t>(KING),
-                            static_cast<std::uint32_t>(NUM_PIECES),
-                            static_cast<std::uint32_t>(NUM_PIECES));
+        moves.emplace_back(type,
+                           king_sq,
+                           dest_sq,
+                           KING,
+                           friendly_colour,
+                           NUM_PIECES,
+                           NUM_PIECES);
     }
 }
 

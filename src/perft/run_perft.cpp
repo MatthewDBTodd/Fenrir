@@ -1,13 +1,24 @@
 #include "attack_table.h"
 #include "board.h"
+#include "move_gen.h"
+#include "move_parse.h"
+
+#include <algorithm>
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <optional>
 #include <string>
-
+#include <vector>
 
 namespace po = boost::program_options;
 
-int main(int argc, char **argv) {
+struct PerftArgs {
+    int depth;
+    std::string fen;
+    std::vector<std::string> moves;
+};
+
+std::optional<PerftArgs> parse_args(int argc, char **argv) {
     po::options_description desc("Allowed Options");
     desc.add_options()
         ("depth", po::value<int>()->required(), "Maximum depth to search")
@@ -41,16 +52,48 @@ int main(int argc, char **argv) {
             moves = vm["moves"].as<std::vector<std::string>>();
         }
 
-        std::cout << "DEPTH: " << depth << "\n";
-        std::cout << "FEN: \"" << fen << "\"\n";
-        std::cout << "MOVES: ";
-        for (const auto &move : moves) {
-            std::cout << move << " ";
-        }
-        std::cout << "\n";
+        return PerftArgs { depth, fen, moves };
     } catch (const std::exception &e) {
         std::cerr << desc << "\n";
+        return std::nullopt;
     } catch (...) {
         std::cerr << desc << "\n";
+        return std::nullopt;
+    }
+}
+
+int main(int argc, char **argv) {
+    const auto args { parse_args(argc, argv) };
+    if (!args.has_value()) {
+        return 1;
+    }
+
+    const AttackTable at {};
+    auto board { Board::init(args->fen) };
+    if (!board.has_value()) {
+        std::cerr << "Error: Invalid fen string\n";
+        return 1;
+    }
+
+    std::vector<EncodedMove> legal_moves;
+    legal_moves.reserve(256);
+
+    const auto is_legal_move = [&](const EncodedMove move) {
+        return std::find(legal_moves.begin(), legal_moves.end(), move) != legal_moves.end();
+    };
+    for (const auto &move_string : args->moves) {
+        const auto parsed_move { parse_move_input(move_string, *board) };
+        if (!parsed_move.has_value()) {
+            std::cerr << "Error: move input \"" << move_string << "\" is invalid\n";
+            return 1;
+        }
+
+        MoveGen(legal_moves, *board, at).gen();
+        if (is_legal_move(*parsed_move)) {
+            board->make_move(*parsed_move);
+        } else {
+            std::cerr << "Error: move \"" << move_string << "\" is not a legal move\n";
+            return 1;
+        }
     }
 }
