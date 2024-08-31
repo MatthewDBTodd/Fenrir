@@ -5,6 +5,7 @@
 
 #include <cctype>
 #include <cmath>
+#include <iostream>
 
 static std::optional<Square> parse_square_string(std::string_view input) {
     BOOST_ASSERT(input.size() == 2);
@@ -37,21 +38,25 @@ static std::optional<Piece> parse_piece_char(char piece) {
 
 std::optional<EncodedMove> parse_move_input(std::string_view input, const Board &board) {
     if (input.size() != 4 && input.size() != 5) {
+        std::cerr << "Error: size of input move must be 4 or 5 with input: \"" << input << "\"\n";
         return std::nullopt;
     }
 
     const auto source { parse_square_string(input.substr(0, 2)) };
     if (!source.has_value()) {
+        std::cerr << "Error: invalid source square with input: \"" << input << "\"\n";
         return std::nullopt;
     }
 
     const auto dest { parse_square_string(input.substr(2, 2)) };
     if (!dest.has_value()) {
+        std::cerr << "Error: invalid dest square with input: \"" << input << "\"\n";
         return std::nullopt;
     }
 
     const auto occupant { board.bitboard().square_occupant(*source) };
     if (!occupant.has_value()) {
+        std::cerr << "Error: source square is not occupied with input: \"" << input << "\"\n";
         return std::nullopt;
     }
 
@@ -62,16 +67,19 @@ std::optional<EncodedMove> parse_move_input(std::string_view input, const Board 
     const auto dest_occupant { board.bitboard().square_occupant(*dest) };
 
     if (dest_occupant.has_value() && dest_occupant->first == colour) {
+        std::cerr << "Error: destination square is occupied by same colour with input: \"" << input << "\"\n";
         return std::nullopt;
     }
 
     if (input.size() == 5) {
         if (piece != PAWN) {
+            std::cerr << "Error: size 5 input where piece != pawn with input: \"" << input << "\"\n";
             return std::nullopt;
         }
         const auto promotion_piece { parse_piece_char(input[4]) };
         if (!promotion_piece.has_value() || 
             (*promotion_piece == PAWN || *promotion_piece == KING)) {
+            std::cerr << "Error: invalid promotion piece with input: \"" << input << "\"\n";
             return std::nullopt;
         }
         if (dest_occupant.has_value()) {
@@ -86,6 +94,7 @@ std::optional<EncodedMove> parse_move_input(std::string_view input, const Board 
     } else if (piece == PAWN && 
                board.en_passant().has_value() && 
                *dest == *board.en_passant()) {
+        /*
         const std::optional<Square> pawn_square = [=]() -> std::optional<Square> {
             if (*dest / 8 == 2) {
                 return static_cast<Square>(*dest + 8);
@@ -98,6 +107,7 @@ std::optional<EncodedMove> parse_move_input(std::string_view input, const Board 
         if (!pawn_square.has_value()) {
             return std::nullopt;
         }
+        */
         return EncodedMove(MoveType::EN_PASSANT, *source, *dest, piece,
                            colour, dest_occupant->second, NUM_PIECES);
         // return move_type_v::EnPassant{ common, *pawn_square };
@@ -121,6 +131,7 @@ std::optional<EncodedMove> parse_move_input(std::string_view input, const Board 
                                colour, NUM_PIECES, NUM_PIECES);
             // return move_type_v::DoublePawnPush { common, ep_square };
         } else {
+            std::cerr << "Error: invalid pawn move with input: \"" << input << "\"\n";
             return std::nullopt;
         }
     } else if (piece == KING) {

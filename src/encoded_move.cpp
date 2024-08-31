@@ -27,8 +27,6 @@ bool operator!=(const EncodedMove l, const EncodedMove r) {
     return !(l == r);
 }
 
-#ifdef FENRIR_TEST
-
 std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
     os << "{ TYPE: " << move.move_type << " SRC: " << move.source_square << 
     " DEST: " << move.dest_square << " PIECE: " << move.piece << " COLOUR: " <<
@@ -37,5 +35,3 @@ std::ostream& operator<<(std::ostream& os, const EncodedMove move) {
 
     return os;
 }
-
-#endif // FENRIR_TEST

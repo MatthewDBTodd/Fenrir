@@ -2,9 +2,11 @@
 #include "board.h"
 #include "move_gen.h"
 #include "move_parse.h"
+#include "utility.h"
 
 #include <algorithm>
 #include <boost/program_options.hpp>
+#include <cstdint>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -62,6 +64,40 @@ std::optional<PerftArgs> parse_args(int argc, char **argv) {
     }
 }
 
+static std::uint64_t perft(Board &board, const AttackTable &at, const int depth) {
+    if (depth == 0) {
+        return 1ul;
+    }
+
+    std::vector<EncodedMove> moves;
+    moves.reserve(256);
+    MoveGen(moves, board, at).gen();
+    std::uint64_t nodes {};
+    for (const auto move : moves) {
+        board.make_move(move);
+        nodes += perft(board, at, depth-1);
+        board.undo_last_move();
+    }
+    return nodes;
+}
+
+static void run_perft(Board &board, const AttackTable &at, const int depth) {
+    std::vector<EncodedMove> moves;
+    moves.reserve(256);
+    MoveGen(moves, board, at).gen();
+
+    std::uint64_t total_nodes {};
+    for (const auto move : moves) {
+        // std::cout << move << "\n";
+        board.make_move(move);
+        const auto result { perft(board, at, depth-1) };
+        board.undo_last_move();
+        total_nodes += result;
+        std::cout << move_to_string(move) << " " << result << "\n";
+    }
+    std::cout << "\n" << total_nodes << "\n";
+}
+
 int main(int argc, char **argv) {
     const auto args { parse_args(argc, argv) };
     if (!args.has_value()) {
@@ -75,16 +111,23 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    std::vector<std::string_view> input_moves;
+    for (const auto &move_string : args->moves) {
+        const auto moves { utility::split(move_string, ' ') };
+        std::copy(moves.begin(), moves.end(), std::back_inserter(input_moves));
+    }
+
     std::vector<EncodedMove> legal_moves;
     legal_moves.reserve(256);
 
     const auto is_legal_move = [&](const EncodedMove move) {
         return std::find(legal_moves.begin(), legal_moves.end(), move) != legal_moves.end();
     };
-    for (const auto &move_string : args->moves) {
-        const auto parsed_move { parse_move_input(move_string, *board) };
+
+    for (const auto input_move : input_moves) {
+        const auto parsed_move { parse_move_input(input_move, *board) };
         if (!parsed_move.has_value()) {
-            std::cerr << "Error: move input \"" << move_string << "\" is invalid\n";
+            std::cerr << "Error: move input \"" << input_move << "\" is invalid\n";
             return 1;
         }
 
@@ -92,8 +135,10 @@ int main(int argc, char **argv) {
         if (is_legal_move(*parsed_move)) {
             board->make_move(*parsed_move);
         } else {
-            std::cerr << "Error: move \"" << move_string << "\" is not a legal move\n";
+            std::cerr << "Error: move \"" << input_move << "\" is not a legal move\n";
             return 1;
         }
     }
+
+    run_perft(*board, at, args->depth);
 }

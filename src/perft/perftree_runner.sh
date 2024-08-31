@@ -1,0 +1,1 @@
+./home/matt/Documents/fenrir/build/release/fenrir_perft "$1" "$2" "${@:3}"

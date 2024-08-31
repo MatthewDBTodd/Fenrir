@@ -24,9 +24,4 @@ struct EncodedMove {
 
 bool operator==(const EncodedMove l, const EncodedMove r);
 bool operator!=(const EncodedMove l, const EncodedMove r);
-
-#ifdef FENRIR_TEST
-
 std::ostream& operator<<(std::ostream& os, const EncodedMove move);
-
-#endif

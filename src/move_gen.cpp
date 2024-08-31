@@ -129,7 +129,7 @@ void MoveGen::push_if_legal(
 * 3. Move the king */
 void MoveGen::escape_single_check() {
     // captures of checking piece
-    for (const auto piece_type : ALL_PIECES) {
+    for (const auto piece_type : NON_KING_PIECES) {
         const auto all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
         for (const auto single_src_piece : SetBits(all_src_pieces)) {
             const auto captures_of_checking_piece {
@@ -234,7 +234,17 @@ void MoveGen::castling(const Piece side) {
         return;
     }
 
-    const std::uint64_t castling_squares { [=, this] {
+    const std::uint64_t required_clear_squares { [=, this] {
+        if (friendly_colour == WHITE) {
+            return side == KING ? from_square(F1) | from_square(G1)
+                                : from_square(B1) | from_square(C1) | from_square(D1);
+        } else {
+            return side == KING ? from_square(F8) | from_square(G1)
+                                : from_square(B8) | from_square(C8) | from_square(D8);
+        }
+    }() };
+
+    const std::uint64_t required_no_incoming_attack_squares { [=, this] {
         if (friendly_colour == WHITE) {
             return side == KING ? from_square(F1) | from_square(G1)
                                 : from_square(C1) | from_square(D1);
@@ -267,8 +277,10 @@ void MoveGen::castling(const Piece side) {
     // check the rook hasn't moved
     BOOST_ASSERT(bb.colour_piece_mask(friendly_colour, ROOK) & from_square(rook_sq));
 
-    //     are the intermediate squares blocked? | are the intermediate squares under attack?
-    if ( !(castling_squares & bb.entire_mask() || castling_squares & danger_squares) ) {
+    //     are the intermediate squares blocked? 
+    if ( !(required_clear_squares & bb.entire_mask() || 
+           // are the intermediate squares under attack?
+           required_no_incoming_attack_squares & danger_squares) ) {
         const auto type { side == KING ? MoveType::CASTLE_KINGSIDE : MoveType::CASTLE_QUEENSIDE };
         moves.emplace_back(type,
                            king_sq,
