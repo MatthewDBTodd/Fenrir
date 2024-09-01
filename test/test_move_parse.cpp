@@ -73,7 +73,7 @@ TEST(TestMoveParse, TestMoveParse) {
     result = parse_move_input("b2b1Q", b);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(expected, result);
-    EXPECT_EQ("b2b1Q", move_to_string(*result));
+    EXPECT_EQ("b2b1q", move_to_string(*result));
 
     b = *Board::init("rn1qkb1r/pP2pppp/5n2/5b2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 1 5");
     expected = EncodedMove(MoveType::CAPTURE_PROMOTION, B7, A8, PAWN, WHITE, ROOK, QUEEN);
@@ -83,5 +83,5 @@ TEST(TestMoveParse, TestMoveParse) {
     result = parse_move_input("b7a8Q", b);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(expected, result);
-    EXPECT_EQ("b7a8Q", move_to_string(*result));
+    EXPECT_EQ("b7a8q", move_to_string(*result));
 }

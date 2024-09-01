@@ -132,17 +132,35 @@ void MoveGen::escape_single_check() {
     for (const auto piece_type : NON_KING_PIECES) {
         const auto all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
         for (const auto single_src_piece : SetBits(all_src_pieces)) {
-            const auto captures_of_checking_piece {
+            const std::uint64_t ep_mask { 
+                (en_passant && piece_type == PAWN ? from_square(*en_passant) : 0ul) 
+            };
+            const std::uint64_t enemy_mask {
+                bb.colour_mask(opposite(friendly_colour)) | ep_mask
+            };
+            const auto captures {
                 at.captures(from_mask(single_src_piece), piece_type, friendly_colour,
-                            bb.entire_mask(), bb.colour_mask(opposite(friendly_colour)))
-                & check_intervention_squares 
+                            bb.entire_mask(), enemy_mask)
+            };
+            const auto captures_of_checking_piece {
+                captures & check_intervention_squares 
             };
             if (captures_of_checking_piece) {
                 const auto checking_piece { bb.square_occupant(from_mask(checking_pieces)) };
                 BOOST_ASSERT(checking_piece.has_value());
                 BOOST_ASSERT(checking_piece->first == opposite(friendly_colour));
-                push_if_legal(MoveType::CAPTURE, single_src_piece, checking_pieces, piece_type,
-                              checking_piece->second, NUM_PIECES);
+                if (piece_type == PAWN) {
+                    single_pawn_captures(single_src_piece, captures_of_checking_piece, 
+                                         checking_piece->second, opposite(friendly_colour));
+                } else {
+                    push_if_legal(MoveType::CAPTURE, single_src_piece, checking_pieces, piece_type,
+                                checking_piece->second, NUM_PIECES);
+                }
+            }
+            // push_if_legal will check if the en-passant is legal
+            if (captures & ep_mask) {
+                push_if_legal(MoveType::EN_PASSANT, single_src_piece, ep_mask, PAWN,
+                              PAWN, NUM_PIECES);
             }
         }
     }
@@ -155,19 +173,13 @@ void MoveGen::escape_single_check() {
                 at.moves(from_mask(single_src_piece), piece_type, friendly_colour, bb.entire_mask())
                 & check_intervention_squares
             };
-            for (const auto dest : SetBits(blocks)) {
-                const MoveType type = [=] {
-                    if (piece_type == PAWN) {
-                        const int diff {
-                            std::abs(std::countr_zero(dest) - std::countr_zero(single_src_piece))
-                        };
-                        BOOST_ASSERT(diff == 8 || diff == 16);
-                        return diff == 16 ? MoveType::DOUBLE_PAWN_PUSH : MoveType::QUIET;
-                    }
-                    return MoveType::QUIET;
-                }();
-                push_if_legal(type, single_src_piece, dest, piece_type, 
-                              NUM_PIECES, NUM_PIECES);
+            if (piece_type == PAWN) {
+                single_pawn_quiet_moves(single_src_piece, blocks);
+            } else {
+                for (const auto dest : SetBits(blocks)) {
+                    push_if_legal(MoveType::QUIET, single_src_piece, dest, piece_type, 
+                                NUM_PIECES, NUM_PIECES);
+                }
             }
         }
     }
@@ -344,25 +356,20 @@ void MoveGen::single_pawn_quiet_moves(
     const std::uint64_t single_pawn, std::uint64_t quiet_moves
 ) {
     BOOST_ASSERT(std::popcount(quiet_moves) <= 2);
-    // single + double pawn push
-    if (std::popcount(quiet_moves) == 2) {
-        const auto first { quiet_moves & -quiet_moves };
-        quiet_moves ^= first;
-        // least significant bit is single push for white, double for black
-        const MoveType first_type = friendly_colour == WHITE ? MoveType::QUIET 
-                                                             : MoveType::DOUBLE_PAWN_PUSH;
-        push_if_legal(first_type, single_pawn, first, PAWN, NUM_PIECES, NUM_PIECES);
-
-        const MoveType second_type = friendly_colour == WHITE ? MoveType::DOUBLE_PAWN_PUSH
-                                                                : MoveType::QUIET;
-        push_if_legal(second_type, single_pawn, quiet_moves, PAWN, NUM_PIECES, NUM_PIECES);
-    } else if (is_promotion(quiet_moves)) {
-        for (const auto promotion_piece : PROMOTION_PIECES) {
-            push_if_legal(MoveType::MOVE_PROMOTION, single_pawn, quiet_moves, PAWN,
-                          NUM_PIECES, promotion_piece);
+    for (const auto single_move : SetBits(quiet_moves)) {
+        if (is_promotion(single_move)) {
+            for (const auto promotion_piece : PROMOTION_PIECES) {
+                push_if_legal(MoveType::MOVE_PROMOTION, single_pawn, single_move, PAWN,
+                              NUM_PIECES, promotion_piece);
+            }
+        } else {
+            const int diff {
+                std::abs(std::countr_zero(single_move) - std::countr_zero(single_pawn))
+            };
+            BOOST_ASSERT(diff == 8 || diff == 16);
+            const auto type { diff == 16 ? MoveType::DOUBLE_PAWN_PUSH : MoveType::QUIET };
+            push_if_legal(type, single_pawn, single_move, PAWN, NUM_PIECES, NUM_PIECES);
         }
-    } else {
-        push_if_legal(MoveType::QUIET, single_pawn, quiet_moves, PAWN, NUM_PIECES, NUM_PIECES);
     }
 }
 
