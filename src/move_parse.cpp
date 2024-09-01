@@ -179,11 +179,11 @@ std::string move_to_string(const EncodedMove move) {
 
         rv.append(1, [=]{
             switch (static_cast<Piece>(move.promoted_piece)) {
-                case KNIGHT: return 'N';
-                case BISHOP: return 'B';
-                case ROOK: return 'R';
-                case QUEEN: return 'Q';
-                default: return 'X'; // should not happen but here to make it obvious if it does
+                case KNIGHT: return 'n';
+                case BISHOP: return 'b';
+                case ROOK: return 'r';
+                case QUEEN: return 'q';
+                default: return 'x'; // should not happen but here to make it obvious if it does
             }
         }());
     }

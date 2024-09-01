@@ -58,7 +58,8 @@ private:
         return (0b11 << (colour * 2)) & castling;
     }
 
-    void check_capture(const Square dest_square);
+    void check_source(const Square source_square);
+    void check_dest(const Square dest_square);
 
     std::uint8_t castling { 0b1111 };
 };

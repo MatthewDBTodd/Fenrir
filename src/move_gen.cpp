@@ -239,7 +239,7 @@ void MoveGen::castling(const Piece side) {
             return side == KING ? from_square(F1) | from_square(G1)
                                 : from_square(B1) | from_square(C1) | from_square(D1);
         } else {
-            return side == KING ? from_square(F8) | from_square(G1)
+            return side == KING ? from_square(F8) | from_square(G8)
                                 : from_square(B8) | from_square(C8) | from_square(D8);
         }
     }() };
