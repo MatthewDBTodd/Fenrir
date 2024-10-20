@@ -15,6 +15,8 @@ enum PawnMovetype {
 
 class AttackTable {
 public:
+    std::uint64_t moves(const Square square, const Piece piece, const Colour colour,
+                        const std::uint64_t blockers) const;
     // all the squares a piece threatens/covers
     std::uint64_t attacks(const Square square, const Piece piece, const Colour colour,
                           const std::uint64_t blockers) const;
@@ -24,7 +26,7 @@ public:
                            const std::uint64_t blockers, const std::uint64_t enemies) const;
 
     // attacks & ~all_pieces
-    std::uint64_t moves(const Square square, const Piece piece, const Colour colour,
+    std::uint64_t moves_(const Square square, const Piece piece, const Colour colour,
                         const std::uint64_t blockers) const;
     
 

@@ -18,6 +18,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 find_package(Boost REQUIRED COMPONENTS stacktrace_basic program_options)
+find_package(benchmark REQUIRED)
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 include_directories(include ${Boost_INCLUDE_DIRS})
@@ -37,7 +38,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -DBOOST_ENABLE_ASSERT_DEBUG_HANDLER")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Profiling")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -DNDEBUG -DBOOST_ENABLE_ASSERT_DEBUG_HANDLER")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -fno-omit-frame-pointer -DNDEBUG -DBOOST_ENABLE_ASSERT_DEBUG_HANDLER -DFENRIR_PROFILING")
 else()
     message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
 endif()
@@ -72,6 +73,9 @@ target_link_libraries(fenrir PRIVATE fenrir_lib ${Boost_LIBRARIES} dl backtrace)
 add_executable(fenrir_perft "src/perft/run_perft.cpp")
 # target_link_libraries(fenrir_perft PRIVATE fenrir_lib Boost::stacktrace_basic dl backtrace )
 target_link_libraries(fenrir_perft PRIVATE fenrir_lib ${Boost_LIBRARIES} dl backtrace)
+
+add_executable(fenrir_bench "src/perft/bench.cpp")
+target_link_libraries(fenrir_bench PRIVATE fenrir_lib ${Boost_LIBRARIES} dl backtrace benchmark::benchmark)
 
 # set(CMAKE_CXX_CPPCHECK "cppcheck;language=c++;--enable=all;--suppress=missingIncludeSystem;")
 # add_executable(fenrir ${SOURCES})

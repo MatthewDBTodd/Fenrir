@@ -140,27 +140,23 @@ void Bitboard::operator()(const move_type_v::Quiet quiet, move_action_v::UnMake)
     place_unchecked(quiet.common.colour, quiet.common.piece, quiet.common.source);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::Capture cap, move_action_v::Make) {
     remove_unchecked(cap.common.colour, cap.common.piece, cap.common.source);
     remove_unchecked(opposite(cap.common.colour), cap.captured_piece, cap.common.dest);
     place_unchecked(cap.common.colour, cap.common.piece, cap.common.dest);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::Capture cap, move_action_v::UnMake) {
     remove_unchecked(cap.common.colour, cap.common.piece, cap.common.dest);
     place_unchecked(cap.common.colour, cap.common.piece, cap.common.source);
     place_unchecked(opposite(cap.common.colour), cap.captured_piece, cap.common.dest);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::DoublePawnPush dpp, move_action_v::Make) {
     remove_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.source);
     place_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.dest);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::DoublePawnPush dpp, move_action_v::UnMake) {
     remove_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.dest);
     place_unchecked(dpp.common.colour, dpp.common.piece, dpp.common.source);
@@ -250,40 +246,34 @@ void Bitboard::operator()(const move_type_v::CastleQueenSide cqs, move_action_v:
     place_unchecked(cqs.common.colour, ROOK, rook_source);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::EnPassant ep, move_action_v::Make) {
     remove_unchecked(ep.common.colour, ep.common.piece, ep.common.source);
     place_unchecked(ep.common.colour, ep.common.piece, ep.common.dest);
     remove_unchecked(opposite(ep.common.colour), PAWN, ep.pawn_square);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::EnPassant ep, move_action_v::UnMake) {
     remove_unchecked(ep.common.colour, ep.common.piece, ep.common.dest);
     place_unchecked(ep.common.colour, ep.common.piece, ep.common.source);
     place_unchecked(opposite(ep.common.colour), PAWN, ep.pawn_square);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::MovePromotion mp, move_action_v::Make) {
     remove_unchecked(mp.common.colour, mp.common.piece, mp.common.source);
     place_unchecked(mp.common.colour, mp.promotion_piece, mp.common.dest);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::MovePromotion mp, move_action_v::UnMake) {
     remove_unchecked(mp.common.colour, mp.promotion_piece, mp.common.dest);
     place_unchecked(mp.common.colour, mp.common.piece, mp.common.source);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::CapturePromotion cp, move_action_v::Make) {
     remove_unchecked(cp.common.colour, cp.common.piece, cp.common.source);
     remove_unchecked(opposite(cp.common.colour), cp.captured_piece, cp.common.dest);
     place_unchecked(cp.common.colour, cp.promotion_piece, cp.common.dest);
 }
 
-// cppcheck-suppress passedByValue
 void Bitboard::operator()(const move_type_v::CapturePromotion cp, move_action_v::UnMake) {
     remove_unchecked(cp.common.colour, cp.promotion_piece, cp.common.dest);
     place_unchecked(cp.common.colour, cp.common.piece, cp.common.source);
@@ -307,6 +297,7 @@ std::ostream& operator<<(std::ostream &os, const Bitboard &bb) {
         os << "   ";
         for (const int _ : std::views::iota(0, 8)) {
             os << "+---";
+            (void)_;
         }
         os << std::endl;
         os << " " << rank << " ";
@@ -319,6 +310,7 @@ std::ostream& operator<<(std::ostream &os, const Bitboard &bb) {
     os << "   ";
     for (const int _ : std::views::iota(0, 8)) {
         os << "+---";
+        (void)_;
     }
     os << std::endl;
     os << "     a   b   c   d   e   f   g   h" << std::endl;;

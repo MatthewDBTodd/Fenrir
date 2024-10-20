@@ -8,14 +8,15 @@
 #include <cstdint>
 #include <optional>
 #include <string_view>
-#include <vector>
+// #include <vector>
+#include <array>
 
 struct SavedMove {
-    const DecodedMove move;
+    DecodedMove move;
     // from before the move was made
-    const CastlingRights prev_castling;
-    const std::uint16_t prev_quiet_half_moves;
-    const std::optional<Square> prev_en_passant;
+    CastlingRights prev_castling;
+    std::uint16_t prev_quiet_half_moves;
+    std::optional<Square> prev_en_passant;
 };
 
 class Board {
@@ -58,7 +59,9 @@ private:
     Colour turn_colour_ { WHITE };
     CastlingRights castling_ {};
     std::optional<Square> en_passant_ {};
-    std::vector<SavedMove> prev_moves_;
+    // std::vector<SavedMove> prev_moves_;
+    std::array<SavedMove, 256> prev_moves_ {};
+    std::size_t back_ {};
 };
 
 /*

@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <boost/program_options.hpp>
+#include <chrono>
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -82,6 +84,7 @@ static std::uint64_t perft(Board &board, const AttackTable &at, const int depth)
 }
 
 static void run_perft(Board &board, const AttackTable &at, const int depth) {
+    const auto t0 { std::chrono::steady_clock::now() };
     std::vector<EncodedMove> moves;
     moves.reserve(256);
     MoveGen(moves, board, at).gen();
@@ -95,7 +98,12 @@ static void run_perft(Board &board, const AttackTable &at, const int depth) {
         total_nodes += result;
         std::cout << move_to_string(move) << " " << result << "\n";
     }
+    const auto t1 { std::chrono::steady_clock::now() };
     std::cout << "\n" << total_nodes << "\n";
+    const auto ms { std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0).count() };
+    std::cout << "Took " << ms/1000 << "." << std::setw(3) << std::setfill('0') << ms%1000 << "s\n";
+    const double per_ms { static_cast<double>(total_nodes) / ms };
+    std::cout << "Searched " << static_cast<int>(per_ms*1000) << " nodes per second\n";
 }
 
 int main(int argc, char **argv) {

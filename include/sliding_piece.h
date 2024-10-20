@@ -10,6 +10,11 @@ class Magic {
 public:
     static Magic init(const Square square, const Piece piece);
     std::uint64_t get_attacks(const std::uint64_t occupied_unmasked) const;
+#ifdef FENRIR_PROFILING
+    std::size_t size_bytes() const {
+        return attacks.size() * sizeof(attacks[0]);
+    }
+#endif
 private:
     Magic(const std::uint64_t magic, const std::uint64_t mask, const int shift,
           std::vector<std::uint64_t> attacks);

@@ -91,6 +91,7 @@ inline std::ostream& operator<<(std::ostream &os, const MaskDisplay mask) {
         os << "   ";
         for (const int _ : std::views::iota(0, 8)) {
             os << "+---";
+            (void)_;
         }
         os << std::endl;
         os << " " << rank << " ";
@@ -103,6 +104,7 @@ inline std::ostream& operator<<(std::ostream &os, const MaskDisplay mask) {
     os << "   ";
     for (const int _ : std::views::iota(0, 8)) {
         os << "+---";
+        (void)_;
     }
     os << std::endl;
     os << "     a   b   c   d   e   f   g   h" << std::endl;;

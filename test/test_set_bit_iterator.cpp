@@ -30,6 +30,10 @@ TEST(TestSetBits, TestSetBits) {
         {
             43690,
             { 2, 8, 32, 128, 512, 2048, 8192, 32768 }
+        },
+        {
+            0,
+            {}
         }
     };
     for (const auto &test_case : test_cases) {

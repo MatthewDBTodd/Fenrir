@@ -6,6 +6,7 @@
 #include <array>
 #include <bit>
 #include "fenrir_assert.h"
+#include <iostream>
 #include <limits>
 #include <random>
 #include <utility>
@@ -185,6 +186,7 @@ Magic Magic::init(const Square square, const Piece piece) {
             break;
         }
     }
+    // std::cout << attacks.size() << "\n";
     return Magic(magic, raw_block_mask, shift, attacks);
 }
 
@@ -201,7 +203,27 @@ static std::array<Magic, NUM_SQUARES> init_magics(const Piece piece) {
 SlidingPieceAttacks::SlidingPieceAttacks() :
     rook_attacks(init_magics(ROOK)),
     bishop_attacks(init_magics(BISHOP))
-{}
+{
+// #ifdef FENRIR_PROFILING
+#if 0
+    std::cout << "Size of SlidingPieceAttacks (stack) = " << sizeof(SlidingPieceAttacks) << " bytes\n";
+    std::size_t rook_size {
+        std::accumulate(rook_attacks.begin(), rook_attacks.end(), 0ull, 
+                        [](const std::size_t &acc, const Magic &magic) {
+            return acc + magic.size_bytes();
+        })
+    };
+    std::size_t bishop_size {
+        std::accumulate(bishop_attacks.begin(), bishop_attacks.end(), 0ull,
+                        [](const std::size_t &acc, const Magic &magic) {
+            return acc + magic.size_bytes();
+        })
+    };
+    std::cout << "Size of rook attacks = " << rook_size << " bytes\n";
+    std::cout << "Size of bishop attacks = " << bishop_size << " bytes\n";
+    std::cout << "total = " << rook_size + bishop_size << "\n";
+#endif
+}
 
 std::uint64_t SlidingPieceAttacks::lookup(const Square square, const Piece piece,
                                           const std::uint64_t blockers) const {

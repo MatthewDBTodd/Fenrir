@@ -170,7 +170,7 @@ void MoveGen::escape_single_check() {
         const auto all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
         for (const auto single_src_piece : SetBits(all_src_pieces)) {
             const auto blocks {
-                at.moves(from_mask(single_src_piece), piece_type, friendly_colour, bb.entire_mask())
+                at.moves_(from_mask(single_src_piece), piece_type, friendly_colour, bb.entire_mask())
                 & check_intervention_squares
             };
             if (piece_type == PAWN) {
@@ -309,7 +309,7 @@ void MoveGen::quiet_moves_for_piece_type(const Piece piece_type) {
     const std::uint64_t all_src_pieces { bb.colour_piece_mask(friendly_colour, piece_type) };
     for (const std::uint64_t single_src_piece : SetBits(all_src_pieces)) {
         const std::uint64_t quiet_moves { 
-            at.moves(from_mask(single_src_piece), piece_type, friendly_colour, all_pieces)
+            at.moves_(from_mask(single_src_piece), piece_type, friendly_colour, all_pieces)
         };
         for (const auto single_move : SetBits(quiet_moves)) {
             push_if_legal(MoveType::QUIET, single_src_piece, single_move, piece_type,
@@ -413,7 +413,7 @@ void MoveGen::single_pawn_moves(const std::uint64_t single_pawn) {
 
     const std::uint64_t all_pieces { bb.entire_mask() };
     const std::uint64_t quiet_moves {
-        at.moves(from_mask(single_pawn), PAWN, friendly_colour, all_pieces)
+        at.moves_(from_mask(single_pawn), PAWN, friendly_colour, all_pieces)
     };
 
     if (quiet_moves > 0) {
@@ -553,7 +553,6 @@ std::uint64_t pinned_pieces(const Bitboard &bb, const AttackTable &at, const Col
             );
         };
     }
-
     for (const auto bishop_pin_candidate : SetBits(bishop_pin_candidates)) {
         // get bishops in line with candidate if any
         const std::uint64_t bishops_in_line { 

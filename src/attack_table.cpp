@@ -1,6 +1,20 @@
 #include "attack_table.h"
 
 #include "fenrir_assert.h"
+std::uint64_t AttackTable::moves(const Square square, const Piece piece, const Colour colour,
+                                 const std::uint64_t blockers) const {
+    BOOST_ASSERT(piece != PAWN && piece != NUM_PIECES);
+    switch (piece) {
+        case KNIGHT: return knight[square];
+        case BISHOP:
+        case ROOK: return sliding_piece.lookup(square, piece, blockers);
+        case QUEEN:
+            return sliding_piece.lookup(square, BISHOP, blockers) |
+                   sliding_piece.lookup(square, ROOK, blockers);
+        case KING: return king[square];
+        default: return 0ul;
+    }
+}
 
 std::uint64_t AttackTable::captures(const Square square, const Piece piece, const Colour colour,
                                     const std::uint64_t blockers, const std::uint64_t enemies) const {
@@ -8,7 +22,7 @@ std::uint64_t AttackTable::captures(const Square square, const Piece piece, cons
 }
 
 // Has to have a separate implementation as pawn quiet moves use different move-sets
-std::uint64_t AttackTable::moves(const Square square, const Piece piece, const Colour colour,
+std::uint64_t AttackTable::moves_(const Square square, const Piece piece, const Colour colour,
                                  const std::uint64_t blockers) const {
     BOOST_ASSERT(piece != NUM_PIECES);
     switch (piece) {

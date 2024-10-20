@@ -17,7 +17,9 @@ Board::Board(const Bitboard &bb, const std::uint16_t fullmove_count,
         turn_colour_(turn_colour),
         castling_(castling),
         en_passant_(en_passant)
-{}
+{
+    // prev_moves_.reserve(256);
+}
 
 void Board::make_move(const EncodedMove move) {
     return make_move(decode(move));
@@ -25,12 +27,13 @@ void Board::make_move(const EncodedMove move) {
 
 void Board::make_move(const DecodedMove &move) {
     // needs to be done before making the move as some of these values will get clobbered
-    prev_moves_.emplace_back(SavedMove {
+    BOOST_ASSERT(back_ < prev_moves_.size());
+    prev_moves_[back_++] = SavedMove {
         move,
         castling_,
         quiet_half_moves_,
         en_passant_
-    });
+    };
 
     bitboard_.make_move(move);
 
@@ -47,8 +50,10 @@ void Board::make_move(const DecodedMove &move) {
 }
 
 void Board::undo_last_move() {
-    BOOST_ASSERT(!prev_moves_.empty());
-    const auto &last_move { prev_moves_.back() }; 
+    // BOOST_ASSERT(!prev_moves_.empty());
+    BOOST_ASSERT(back_ > 0);
+    back_ -= 1;
+    const auto &last_move { prev_moves_[back_] }; 
     castling_ = last_move.prev_castling;
     quiet_half_moves_ = last_move.prev_quiet_half_moves;
     en_passant_ = last_move.prev_en_passant;
@@ -57,8 +62,6 @@ void Board::undo_last_move() {
     fullmove_count_ -= turn_colour_;
 
     bitboard_.unmake_move(last_move.move);
-
-    prev_moves_.pop_back();
 }
 
 void Board::operator()(const move_type_v::Quiet &quiet) {
@@ -112,7 +115,9 @@ static std::optional<T> parse_int(std::string_view fen);
 
 std::optional<Board> Board::init(std::string_view fen) {
     const std::vector<std::string_view> fen_parts { utility::split(fen, ' ') };
-    if (fen_parts.size() != 6) {
+    // The first 4 parts we need no matter what, the final 2 fields is not the end of the world
+    // if they're missing
+    if (fen_parts.size() < 4) {
         return std::nullopt;
     }
     const std::optional<Bitboard> bb { Bitboard::from_fen(fen_parts[0]) };
@@ -147,23 +152,27 @@ std::optional<Board> Board::init(std::string_view fen) {
         *std::get_if<std::optional<Square>>(&en_passant_result)
     };
 
-    const std::optional<std::uint8_t> quiet_half_moves { 
-        parse_int<std::uint8_t>(fen_parts[4]) 
-    };
+    const std::uint8_t quiet_half_moves = [&] {
+        if (fen_parts.size() > 4) {
+            const auto parsed { parse_int<std::uint8_t>(fen_parts[4]) };
+            if (parsed.has_value()) {
+                return *parsed;
+            } 
+        }
+        return std::uint8_t(0);
+    }();
 
-    if (!quiet_half_moves.has_value()) {
-        return std::nullopt;
-    }
+    const std::uint16_t fullmove_count = [&] {
+        if (fen_parts.size() > 5) {
+            const auto parsed { parse_int<std::uint16_t>(fen_parts[5]) };
+            if (parsed.has_value()) {
+                return *parsed;
+            }
+        }
+        return std::uint16_t(1);
+    }();
 
-    const std::optional<std::uint16_t> fullmove_count {
-        parse_int<std::uint16_t>(fen_parts[5])
-    };
-
-    if (!fullmove_count.has_value()) {
-        return std::nullopt;
-    }
-
-    return Board(*bb, *fullmove_count, *quiet_half_moves, *turn_colour_, 
+    return Board(*bb, fullmove_count, quiet_half_moves, *turn_colour_, 
                  *castling, en_passant_);
 }
 

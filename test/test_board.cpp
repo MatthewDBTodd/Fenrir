@@ -97,22 +97,28 @@ TEST(TestBoard, TestBoardFromFen) {
     board = Board::init(fen);
     EXPECT_FALSE(board.has_value());
 
+    // half move and fullmove count use defaults of 0 1 if they're invalid
+
     // non int half move count
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - x 1";
     board = Board::init(fen);
-    EXPECT_FALSE(board.has_value());
+    ASSERT_TRUE(board.has_value());
+    EXPECT_EQ(0, board->quiet_half_moves_);
 
     // out of range half move count
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 256 1";
     board = Board::init(fen);
-    EXPECT_FALSE(board.has_value());
+    ASSERT_TRUE(board.has_value());
+    EXPECT_EQ(0, board->quiet_half_moves_);
 
     // out of range total move count
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 -1";
     board = Board::init(fen);
-    EXPECT_FALSE(board.has_value());
+    ASSERT_TRUE(board.has_value());
+    EXPECT_EQ(1, board->fullmove_count_);
 
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 65536";
     board = Board::init(fen);
-    EXPECT_FALSE(board.has_value());
+    ASSERT_TRUE(board.has_value());
+    EXPECT_EQ(1, board->fullmove_count_);
 }
